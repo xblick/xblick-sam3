@@ -1,10 +1,10 @@
 # AGENTS.md
 
-durchblick-sam3: Meta's SAM 3.1 detector as a Durchblick node. Per colour frame it publishes the instance masks of
+xblick-sam3: Meta's SAM 3.1 detector as a Durchblick node. Per colour frame it publishes the instance masks of
 the prompts (words, exemplar boxes) and, with `--boxes TOPIC`, one mask per given box. Human documentation: README.md
 (entry), docs/topics.md, docs/prompts.md, docs/performance.md, docs/design.md. Style of all
 documentation: the core's docs/project/writing-docs.md. Transport-wide traps (Zenoh sessions and routers, CUDA rings,
-hanging tests, shared filesystems): AGENTS.md of the core repository (github.com/xblick/durchblick).
+hanging tests, shared filesystems): AGENTS.md of the core repository (github.com/xblick/xblick).
 
 ## Commands
 
@@ -14,15 +14,15 @@ tools/setup.sh                                  # .venv as uv.lock fixes it + SA
 .venv/bin/python -m pytest -q tests/test_node.py
 .venv/bin/ruff check src tests                  # lint, 120 columns (pyproject)
 .venv/bin/python tools/bench.py IMAGES_DIR --words cup bottle --compile default --resolution 672   # speed tables
-uv lock --upgrade-package blick                 # take a newer Durchblick main (pin blick>=0.4,<0.5)
-.venv/bin/durchblick-sam3 --camera robot/camera --words "cup,bottle" --compile default   # needs zenohd on 7447
+uv lock                                         # after a new core rev in pyproject (pin xblick>=0.5.0,<0.6)
+.venv/bin/xblick-sam3 --camera robot/camera --words "cup,bottle" --compile default   # needs zenohd on 7447
 ```
 
 - Checkpoint is gated: Hugging Face account with access to `facebook/sam3.1`, logged in once
   (`.venv/bin/hf auth login`) or `HF_TOKEN`, before `tools/setup.sh`.
-- SAM 3's code: from GitHub at the commit in `uv.lock`. Durchblick (`blick`): git main of github.com/xblick/durchblick.
+- SAM 3's code: from GitHub at the commit in `uv.lock`. Durchblick (`xblick`): at the commit in `pyproject.toml`.
 - `--compile default`: about 45 s of compiling before the first frame.
-- Without a camera: a simulation that publishes `robot/camera`, or `blick play <recording.mcap> --loop`.
+- Without a camera: a simulation that publishes `robot/camera`, or `xblick play <recording.mcap> --loop`.
 
 ## Rules
 
@@ -66,10 +66,10 @@ uv lock --upgrade-package blick                 # take a newer Durchblick main (
 
 | Path | Content |
 | --- | --- |
-| `src/durchblick_sam3/segmenter.py` | `Segmenter`, `Prompt`, `BoxHead`: batched words, `resize`, compile and warm-up |
-| `src/durchblick_sam3/tracking.py` | mask-IoU id tracker (`--match-iou`, `--max-missing`), instance image |
-| `src/durchblick_sam3/node.py` | the node `durchblick-sam3`: streams, boxes, prompts queryable, diagnostics |
-| `src/durchblick_sam3/prompts.py` | client `durchblick-sam3-prompts`, request parsing |
+| `src/xblick_sam3/segmenter.py` | `Segmenter`, `Prompt`, `BoxHead`: batched words, `resize`, compile and warm-up |
+| `src/xblick_sam3/tracking.py` | mask-IoU id tracker (`--match-iou`, `--max-missing`), instance image |
+| `src/xblick_sam3/node.py` | the node `xblick-sam3`: streams, boxes, prompts queryable, diagnostics |
+| `src/xblick_sam3/prompts.py` | client `xblick-sam3-prompts`, request parsing |
 | `tools/setup.sh`, `tools/bench.py` | setup, timing on an image directory |
 | `tests/`, `tests/data/office.png` | segmenter, node over real Zenoh sessions, tracking, a TUM RGB-D frame |
 | `checkpoints/` | `sam3.1_multiplex.pt` (downloaded, not committed) |
@@ -88,4 +88,4 @@ uv lock --upgrade-package blick                 # take a newer Durchblick main (
 | `--local` / `--device` / `--compile` | `auto` / `cuda` / off |
 | Box message wait for its frame | 0.5 s (`FRAME_WAIT_S`) |
 | Environment | `HF_TOKEN` (setup), `UV` (setup), `CUDA_MPS_PIPE_DIRECTORY` (MPS expected) |
-| Consumers | durchblick-foundationpose and the mesh makers read `instances`, durchblick-tapnext seeds on it, `blick rerun --segmentation` draws it |
+| Consumers | xblick-foundationpose and the mesh makers read `instances`, xblick-tapnext seeds on it, `xblick rerun --segmentation` draws it |

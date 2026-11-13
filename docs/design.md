@@ -1,6 +1,6 @@
 # Design
 
-This page explains how durchblick-sam3 works inside and why we decided what we decided. It also lists what the
+This page explains how xblick-sam3 works inside and why we decided what we decided. It also lists what the
 tests check.
 
 ## The model and what the node uses of it

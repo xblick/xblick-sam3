@@ -1,9 +1,9 @@
 # Options, prompts and boxes
 
-This page lists every option of `durchblick-sam3`. It describes the format in which you set prompts while the node
+This page lists every option of `xblick-sam3`. It describes the format in which you set prompts while the node
 works, the `--boxes` mode, and the Python class behind the node.
 
-## Options of `durchblick-sam3`
+## Options of `xblick-sam3`
 
 | Option | Default | Meaning |
 | --- | --- | --- |
@@ -26,7 +26,7 @@ works, the `--boxes` mode, and the Python class behind the node.
 
 **`--max-hz`.** The node takes at most this many colour frames per second, and always the newest one. It does not
 decode the frames that it leaves out.
-[Writing nodes](https://github.com/xblick/durchblick/blob/main/docs/guides/writing-nodes.md)
+[Writing nodes](https://github.com/xblick/xblick/blob/main/docs/guides/writing-nodes.md)
 describes the mechanism.
 
 **`--local`.** With `auto`, the node reads a camera on the same host from its CUDA ring if that ring is on the
@@ -35,7 +35,7 @@ node's GPU. Otherwise it reads from the host ring in shared memory. `shm` and `c
 
 **MPS.** NVIDIA MPS lets several processes use one GPU at the same time. If you set `CUDA_MPS_PIPE_DIRECTORY`, the
 node expects an MPS daemon and stops at start when none answers.
-[Sharing a GPU](https://github.com/xblick/durchblick/blob/main/docs/guides/sharing-a-gpu.md)
+[Sharing a GPU](https://github.com/xblick/xblick/blob/main/docs/guides/sharing-a-gpu.md)
 explains MPS.
 
 ## Prompts
@@ -79,12 +79,12 @@ Rules:
 
 ### The client
 
-`durchblick-sam3-prompts` sends these queries.
+`xblick-sam3-prompts` sends these queries.
 
 ```bash
-.venv/bin/durchblick-sam3-prompts --camera robot/camera                          # show the prompts
-.venv/bin/durchblick-sam3-prompts --camera robot/camera --words bowl "soup can"  # set words
-.venv/bin/durchblick-sam3-prompts --camera robot/camera --json '{"prompts": ["cup"]}'
+.venv/bin/xblick-sam3-prompts --camera robot/camera                          # show the prompts
+.venv/bin/xblick-sam3-prompts --camera robot/camera --words bowl "soup can"  # set words
+.venv/bin/xblick-sam3-prompts --camera robot/camera --json '{"prompts": ["cup"]}'
 ```
 
 | Option | Default | Meaning |
@@ -135,7 +135,7 @@ An object from a box keeps its id from frame to frame. [docs/topics.md](topics.m
 The class `Segmenter` works on tensors and needs no Durchblick session.
 
 ```python
-from durchblick_sam3.segmenter import Prompt, Segmenter
+from xblick_sam3.segmenter import Prompt, Segmenter
 
 segmenter = Segmenter(["cup", "bottle"], compile="default", resolution=672, box_head=True)
 result = segmenter.segment(rgb)  # rgb: (H, W, 3) uint8 RGB torch tensor, in host or GPU memory
@@ -159,4 +159,4 @@ Every option is also a parameter of the node `<camera>/<node>`, for example `rob
 change while the node runs: `threshold`, `match_iou`, `max_missing`, `words`; the tables mark them. The others are
 read-only and apply at the next start, where `--param NAME:=VALUE` or `--params-file FILE` set them. New words replace
 the prompts at the next frame, and prompts set over `<camera>/<node>/prompts` show in `words`. Durchblick's terminal
-interface (`blick`, tab Parameters) and `blick param` show them.
+interface (`xblick`, tab Parameters) and `xblick param` show them.

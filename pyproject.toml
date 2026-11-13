@@ -1,6 +1,6 @@
 [project]
-name = "durchblick-sam3"
-version = "0.1.0"
+name = "xblick-sam3"
+version = "0.2.0"
 description = "Meta's SAM 3.1 (open-vocabulary instance segmentation) as a Durchblick vision node"
 readme = "README.md"
 license = "Apache-2.0"
@@ -8,7 +8,7 @@ license-files = ["LICENSE", "NOTICE"]
 authors = [{ name = "David Schneider" }]
 requires-python = ">=3.12,<3.13"
 dependencies = [
-    "blick>=0.4,<0.5",  # the Durchblick core: node, history, tensors, mps, parameters, vision_msgs
+    "xblick>=0.5.0,<0.6",  # the Durchblick core: node, history, tensors, mps, parameters, vision_msgs
     # SAM 3 / 3.1's model code (facebookresearch/sam3, SAM License); uv.lock fixes the commit
     "sam3",
     "torch>=2.7",
@@ -24,8 +24,8 @@ dependencies = [
 ]
 
 [project.scripts]
-durchblick-sam3 = "durchblick_sam3.node:main"
-durchblick-sam3-prompts = "durchblick_sam3.prompts:main"
+xblick-sam3 = "xblick_sam3.node:main"
+xblick-sam3-prompts = "xblick_sam3.prompts:main"
 
 [dependency-groups]
 dev = ["pytest>=8", "ruff>=0.6"]
@@ -38,7 +38,7 @@ build-backend = "uv_build"
 index-strategy = "unsafe-best-match"
 
 [tool.uv.sources]
-"blick" = { git = "https://github.com/xblick/durchblick", branch = "main" }
+"xblick" = { git = "https://github.com/xblick/xblick.git", rev = "45908e67465647b39a6b185665bd91da175924ca" }
 "sam3" = { git = "https://github.com/facebookresearch/sam3.git", branch = "main" }
 "torch" = { index = "pytorch-cu130" }
 

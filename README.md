@@ -1,10 +1,10 @@
-# durchblick-sam3
+# xblick-sam3
 
-durchblick-sam3 segments the objects in a camera's colour stream with Meta's
+xblick-sam3 segments the objects in a camera's colour stream with Meta's
 [SAM 3.1](https://github.com/facebookresearch/sam3), an open-vocabulary instance segmentation model. You name the
 objects with words or example boxes, and the node publishes one mask per instance for every frame of a 30 Hz camera.
 
-It is a node of [Durchblick](https://github.com/xblick/durchblick). Use it when another node needs
+It is a node of [Durchblick](https://github.com/xblick/xblick). Use it when another node needs
 masks of objects that no fixed class list covers. You can change the prompts over Zenoh while the node works.
 
 ## What it publishes
@@ -25,7 +25,7 @@ Details: [docs/topics.md](docs/topics.md).
 
 - An NVIDIA GPU with CUDA. We measured on an RTX PRO 6000 Blackwell. Alone on that GPU the node held 4.7 GiB of
   VRAM (four words, `--compile default`, 1280 x 720 at 30 frames per second, 2026-11-02).
-- Durchblick 0.4 or newer, below 0.5 (Python package `blick`). The setup script installs it from source.
+- Durchblick 0.5 or newer, below 0.6 (Python package `xblick`). The setup script installs it from source.
 - [uv](https://docs.astral.sh/uv/) and git.
 - A Hugging Face account with access to the gated model [facebook/sam3.1](https://huggingface.co/facebook/sam3.1).
 - SAM 3's code and the SAM 3.1 checkpoint are under Meta's SAM License. Read it in SAM 3's repository.
@@ -54,11 +54,11 @@ is set before step 2, the first call already downloads the checkpoint.
 ## Run
 
 Start the node on a camera. `robot/camera` is an example name. The node connects to the Zenoh router of the
-PC, which [Sessions](https://github.com/xblick/durchblick/blob/main/docs/concepts/sessions.md)
+PC, which [Sessions](https://github.com/xblick/xblick/blob/main/docs/concepts/sessions.md)
 explains.
 
 ```bash
-.venv/bin/durchblick-sam3 --camera robot/camera --words "cup,bottle,tomato soup can" --compile default
+.venv/bin/xblick-sam3 --camera robot/camera --words "cup,bottle,tomato soup can" --compile default
 ```
 
 `--compile default` compiles the networks for about 45 s before the first frame. After that a frame takes about a
@@ -67,15 +67,15 @@ third less time.
 Look at the result in Durchblick's viewer:
 
 ```bash
-blick rerun --spawn --detections robot/camera/sam3/detections_2d \
+xblick rerun --spawn --detections robot/camera/sam3/detections_2d \
     --segmentation robot/camera/sam3/instances robot/camera/color
 ```
 
 Read the prompts and set new ones while the node works:
 
 ```bash
-.venv/bin/durchblick-sam3-prompts --camera robot/camera
-.venv/bin/durchblick-sam3-prompts --camera robot/camera --words bowl "soup can"
+.venv/bin/xblick-sam3-prompts --camera robot/camera
+.venv/bin/xblick-sam3-prompts --camera robot/camera --words bowl "soup can"
 ```
 
 The options that most users change:
@@ -94,11 +94,11 @@ The options that most users change:
 All options, the prompt format and the Python class: [docs/prompts.md](docs/prompts.md).
 
 Every option is also a parameter of the node `<camera>/<node>`, for example `robot/camera/sam3`. Durchblick's
-terminal interface (`blick`, tab Parameters) and `blick param` show them. Four of them change while the node
+terminal interface (`xblick`, tab Parameters) and `xblick param` show them. Four of them change while the node
 runs: `threshold`, `match_iou`, `max_missing` and `words`. A new list of words replaces the prompts at the next frame,
 and prompts set over `<camera>/<node>/prompts` show in `words`. The other options apply at the next start, and
 `--param NAME:=VALUE` or `--params-file FILE` set them there
-([Parameters](https://github.com/xblick/durchblick/blob/main/docs/reference/parameters.md)).
+([Parameters](https://github.com/xblick/xblick/blob/main/docs/reference/parameters.md)).
 
 ## Why it is fast
 
@@ -120,7 +120,7 @@ The measurements, the method and what did not help: [docs/performance.md](docs/p
 
 ## Limits
 
-- Version 0.1.0. We tested the node on recorded frames and on the replayed head camera of a simulation, beside the
+- Version 0.2.0. We tested the node on recorded frames and on the replayed head camera of a simulation, beside the
   other Durchblick nodes. We have not tested it on a robot.
 - We tested prompts over Zenoh and `--boxes` on recorded frames and in the tests. We have not tested `--boxes` live
   on Boxer's boxes.
@@ -134,10 +134,10 @@ The measurements, the method and what did not help: [docs/performance.md](docs/p
 - [docs/prompts.md](docs/prompts.md): all options, the prompt format, `--boxes`, the Python class.
 - [docs/performance.md](docs/performance.md): measurements, what we changed, what did not help.
 - [docs/design.md](docs/design.md): how the node works inside, the decisions and their reasons, the tests.
-- Durchblick: [Streams and topics](https://github.com/xblick/durchblick/blob/main/docs/concepts/streams-and-topics.md),
-  [Transports](https://github.com/xblick/durchblick/blob/main/docs/concepts/transports.md),
-  [Timestamps](https://github.com/xblick/durchblick/blob/main/docs/concepts/timestamps.md),
-  [Sharing a GPU](https://github.com/xblick/durchblick/blob/main/docs/guides/sharing-a-gpu.md).
+- Durchblick: [Streams and topics](https://github.com/xblick/xblick/blob/main/docs/concepts/streams-and-topics.md),
+  [Transports](https://github.com/xblick/xblick/blob/main/docs/concepts/transports.md),
+  [Timestamps](https://github.com/xblick/xblick/blob/main/docs/concepts/timestamps.md),
+  [Sharing a GPU](https://github.com/xblick/xblick/blob/main/docs/guides/sharing-a-gpu.md).
 
 ## Licence and credits
 

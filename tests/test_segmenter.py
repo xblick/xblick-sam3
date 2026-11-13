@@ -12,7 +12,7 @@ torch = pytest.importorskip("torch")
 if not torch.cuda.is_available():
     pytest.skip("needs a CUDA device", allow_module_level=True)
 
-from durchblick_sam3.segmenter import Prompt, Segmenter  # noqa: E402
+from xblick_sam3.segmenter import Prompt, Segmenter  # noqa: E402
 
 WORDS = ["keyboard", "monitor", "cup", "book", "chair", "teddy bear", "plant", "computer mouse"]
 

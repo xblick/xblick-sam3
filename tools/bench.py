@@ -17,7 +17,7 @@ import cv2
 import numpy as np
 import torch
 
-from durchblick_sam3.segmenter import Segmenter
+from xblick_sam3.segmenter import Segmenter
 
 
 def main():

@@ -1,6 +1,6 @@
-"""durchblick-sam3: SAM 3.1's open-vocabulary instance segmentation (segmenter.py) on a camera's colour stream.
+"""xblick-sam3: SAM 3.1's open-vocabulary instance segmentation (segmenter.py) on a camera's colour stream.
 
-    durchblick-sam3 --camera robot/camera [--words cup bottle "tomato soup can"] \\
+    xblick-sam3 --camera robot/camera [--words cup bottle "tomato soup can"] \\
                     [--boxes <camera>/boxer/detections_2d] [--history 30] \\
                     [--color <camera>/color] [--node sam3] [--threshold 0.5] [--compile max-autotune-no-cudagraphs]
                     [--resolution 672] [--local shm|cuda]
@@ -9,7 +9,7 @@
 What it segments:
 
 * prompts: words (--words), example boxes (exemplars: every instance like the boxed one) or both, set at the start
-  (--words) and at any time over the queryable ``<camera>/<node>/prompts`` (prompts.py, ``durchblick-sam3-prompts``),
+  (--words) and at any time over the queryable ``<camera>/<node>/prompts`` (prompts.py, ``xblick-sam3-prompts``),
   which also answers with the prompts now
 * with --boxes, the boxes of a vision_msgs/Detection2DArray topic, e.g. Boxer's: one mask per box, that box's object
   (SAM's interactive head); each box message's frame (the colour frame of its stamp, one of the last --history) is
@@ -42,11 +42,11 @@ import sys
 import threading
 import time
 
-import blick as db
-from blick import mps, node, tensors, topics
-from blick.camera import check_local
-from blick.history import FrameHistory
-from blick.session import add_arguments, open_from_args
+import xblick as db
+from xblick import mps, node, tensors, topics
+from xblick.camera import check_local
+from xblick.history import FrameHistory
+from xblick.session import add_arguments, open_from_args
 
 from .prompts import PROMPTS, describe, parse
 
@@ -110,7 +110,7 @@ def split_words(given: list[str]) -> list[str]:
 
 
 def main(argv=None) -> int:
-    parser = argparse.ArgumentParser(prog="durchblick-sam3", description=__doc__,
+    parser = argparse.ArgumentParser(prog="xblick-sam3", description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--camera", required=True, help="the camera's base, e.g. robot/camera")
     parser.add_argument("--words", nargs="*", default=[],
@@ -159,7 +159,7 @@ def main(argv=None) -> int:
     color_base = args.color or f"{camera}/color"
 
     # sam3's own imports: pkg_resources' deprecation (setuptools)
-    node.start("durchblick-sam3", ignore=["pkg_resources is deprecated"], max_hz=args.max_hz, local=args.local)
+    node.start("xblick-sam3", ignore=["pkg_resources is deprecated"], max_hz=args.max_hz, local=args.local)
 
     import torch  # noqa: PLC0415 - with the model, after the arguments are checked
 
@@ -185,9 +185,9 @@ def main(argv=None) -> int:
                                            db.Detection2DArray)
     instances_pub = None  # with the first frame's camera_info: the colour camera's
     instances_key = None  # (width, height, frame) of the frames the tracks are of
-    report = node.Reporter(session, camera, args.node, "durchblick-sam3", max_hz=args.max_hz)
+    report = node.Reporter(session, camera, args.node, "xblick-sam3", max_hz=args.max_hz)
     report.watch(color)
-    print(f"durchblick-sam3: {color_base}" + (f" + {box_topic}" if box_topic else "")
+    print(f"xblick-sam3: {color_base}" + (f" + {box_topic}" if box_topic else "")
           + f" -> {camera}/{args.node}/{{detections_2d,instances}}, prompts {segmenter.words} ({prompts_key})",
           flush=True)
     counts = report.counts
@@ -210,7 +210,7 @@ def main(argv=None) -> int:
                 prompts_stamp = frame.header.stamp.to_ns() if frame is not None else None
                 applied_words[0] = segmenter.words  # the parameter follows: it shows the prompts' names
                 params.set("words", segmenter.words)
-                print(f"durchblick-sam3: prompts {segmenter.words}", flush=True)
+                print(f"xblick-sam3: prompts {segmenter.words}", flush=True)
             query.reply(prompts_key, json.dumps(describe(segmenter.prompts, prompts_stamp)))
         except (ValueError, TypeError, json.JSONDecodeError) as error:
             query.reply_err(f"{type(error).__name__}: {error}")
@@ -224,14 +224,14 @@ def main(argv=None) -> int:
         frame_id = info.header.frame_id or frame.header.frame_id
         key = (info.width, info.height, frame_id)
         if instances_pub is not None and key != instances_key:  # the camera came back with another size or frame
-            print(f"durchblick-sam3: {color_base} is now {info.width} x {info.height} in {frame_id}: the tracks start "
+            print(f"xblick-sam3: {color_base} is now {info.width} x {info.height} in {frame_id}: the tracks start "
                   "anew (new ids)", flush=True)
             tracker = Tracker(min_iou=args.match_iou, max_missing=args.max_missing)
             instances_pub.camera_info, instances_pub.frame_id = info, frame_id
         instances_key = key
         if instances_pub is None:
             if args.compile is not None:
-                print(f"durchblick-sam3: compiling ({args.compile})", flush=True)
+                print(f"xblick-sam3: compiling ({args.compile})", flush=True)
                 segmenter.warm_up(*frame.image.shape[:2])
             instances_pub = db.CameraPublisher(
                 session, f"{camera}/{args.node}/instances", encoding="mono16", frame_id=frame_id,
@@ -268,7 +268,7 @@ def main(argv=None) -> int:
         if wanted != applied_words[0]:
             applied_words[0] = wanted
             segmenter.set_prompts(wanted)
-            print(f"durchblick-sam3: prompts {segmenter.words} (parameter words)", flush=True)
+            print(f"xblick-sam3: prompts {segmenter.words} (parameter words)", flush=True)
 
     applied_words = [words]
     pending, pending_since, last_stamp = None, 0.0, None

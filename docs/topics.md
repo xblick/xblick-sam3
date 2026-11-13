@@ -1,6 +1,6 @@
 # Topics and messages
 
-This page lists what durchblick-sam3 reads and what it publishes, field by field. It also explains how an object
+This page lists what xblick-sam3 reads and what it publishes, field by field. It also explains how an object
 keeps its id from frame to frame.
 
 ## Inputs
@@ -16,7 +16,7 @@ that arrive without one and reports the count in its status.
 ## Outputs
 
 Every result has the stamp of its colour frame and the frame id of the camera.
-[Timestamps](https://github.com/xblick/durchblick/blob/main/docs/concepts/timestamps.md) explains
+[Timestamps](https://github.com/xblick/xblick/blob/main/docs/concepts/timestamps.md) explains
 why a result keeps the stamp of its input. `--node` changes the `sam3` part of the topic names.
 
 A frame without instances publishes an empty array and an image of zeros. A viewer then clears its view.
@@ -43,10 +43,10 @@ the object. Where two masks overlap, the pixel holds the id of the instance with
 
 A reader on the same host gets the image on the GPU through the `cuda` transport. Other readers get it `raw` or
 `compressed` as PNG.
-[Transports](https://github.com/xblick/durchblick/blob/main/docs/concepts/transports.md) explains
+[Transports](https://github.com/xblick/xblick/blob/main/docs/concepts/transports.md) explains
 the choice.
 
-`blick rerun --segmentation` draws the instance image over the colour image, with one colour per instance.
+`xblick rerun --segmentation` draws the instance image over the colour image, with one colour per instance.
 [docs/design.md](design.md) states why the encoding is `mono16`.
 
 ### `<camera>/diagnostics`
@@ -76,7 +76,7 @@ intersection over union is at least `--match-iou` (default 0.3). The node choose
 total overlap. An instance without a match gets a new id.
 
 An object ends when the detector has not seen it for more than `--max-missing` frames (default 15). The matching
-takes 0.4 ms per frame. The code is in `src/durchblick_sam3/tracking.py`.
+takes 0.4 ms per frame. The code is in `src/xblick_sam3/tracking.py`.
 
 An object from a given box keeps its id in the same way. The node tracks these objects apart from the objects of
 the prompts. An object of the box class "cup" and an object of the word "cup" are two objects, even if both are the

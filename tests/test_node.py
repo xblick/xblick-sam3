@@ -12,16 +12,16 @@ import threading
 import time
 from pathlib import Path
 
-import blick as db
 import numpy as np
 import pytest
 import torch
-from blick import topics
-from blick.session import open_session
+import xblick as db
+from xblick import topics
+from xblick.session import open_session
 
-from durchblick_sam3.node import boxes_of, to_message
-from durchblick_sam3.prompts import describe, parse
-from durchblick_sam3.segmenter import Prompt, Segmentation
+from xblick_sam3.node import boxes_of, to_message
+from xblick_sam3.prompts import describe, parse
+from xblick_sam3.segmenter import Prompt, Segmentation
 
 CAM = "robot/camera"
 WORDS = ["chair", "cup", "book"]
@@ -107,7 +107,7 @@ def test_node_segments_a_published_stream():
     det_sub = db.DetectionSubscriber(session, topics.detections(CAM, "sam3", "detections_2d"), on_detections)
     # a reader on the CPU: without device= local auto would take the node's CUDA ring on GPU 0 (Durchblick 0.3.38)
     inst_sub = db.ImageSubscriber(session, f"{CAM}/sam3/instances", transport="auto", device="cpu")
-    node = shutil.which("durchblick-sam3", path=os.path.dirname(sys.executable))
+    node = shutil.which("xblick-sam3", path=os.path.dirname(sys.executable))
     process = subprocess.Popen([node, "--camera", CAM, "--words", ",".join(WORDS), "--connect", f"127.0.0.1:{port}"],
                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     output: list[str] = []
@@ -155,7 +155,7 @@ def test_node_segments_a_published_stream():
         assert len(id_sets) == 1, id_sets  # the same objects, the same ids
 
         # its options are parameters: read-only, but the live ones; a new word list is the prompts from the next frame
-        from blick.parameters import ParameterClient  # noqa: PLC0415
+        from xblick.parameters import ParameterClient  # noqa: PLC0415
 
         client = ParameterClient(session, f"{CAM}/sam3")
         descriptors, values = client.all()
@@ -223,7 +223,7 @@ def test_node_segments_given_boxes_and_takes_prompts_over_its_queryable():
     det_sub = db.DetectionSubscriber(session, topics.detections(CAM, "sam3", "detections_2d"), on_detections)
     # a reader on the CPU: without device= local auto would take the node's CUDA ring on GPU 0 (Durchblick 0.3.38)
     inst_sub = db.ImageSubscriber(session, f"{CAM}/sam3/instances", transport="auto", device="cpu")
-    node = shutil.which("durchblick-sam3", path=os.path.dirname(sys.executable))
+    node = shutil.which("xblick-sam3", path=os.path.dirname(sys.executable))
     node_port = free_port()  # the prompts client's way to the node: this test's peer session routes no queries
     process = subprocess.Popen([node, "--camera", CAM, "--words", ",".join(WORDS), "--boxes", box_key,
                                 "--connect", f"127.0.0.1:{port}", "--listen", f"127.0.0.1:{node_port}"],
@@ -315,7 +315,7 @@ def test_node_segments_given_boxes_and_takes_prompts_over_its_queryable():
             got, error = ask(json.dumps(bad))
             assert got is None and why in error, error
         assert ask()[0] == request
-        client = shutil.which("durchblick-sam3-prompts", path=os.path.dirname(sys.executable))
+        client = shutil.which("xblick-sam3-prompts", path=os.path.dirname(sys.executable))
         shown = subprocess.run([client, "--camera", CAM, "--connect", f"127.0.0.1:{node_port}"], capture_output=True,
                                text=True, timeout=60)
         assert shown.returncode == 0 and json.loads(shown.stdout) == request, shown.stderr

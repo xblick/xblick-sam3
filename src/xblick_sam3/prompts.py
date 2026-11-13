@@ -1,9 +1,9 @@
-"""durchblick-sam3-prompts: shows or sets a running durchblick-sam3's prompts over its queryable
+"""xblick-sam3-prompts: shows or sets a running xblick-sam3's prompts over its queryable
 ``<camera>/<node>/prompts``.
 
-    durchblick-sam3-prompts --camera robot/camera                       # the prompts now
-    durchblick-sam3-prompts --camera robot/camera --words cup "soup can"
-    durchblick-sam3-prompts --camera robot/camera --json '{"prompts": [...], "stamp": ...}'
+    xblick-sam3-prompts --camera robot/camera                       # the prompts now
+    xblick-sam3-prompts --camera robot/camera --words cup "soup can"
+    xblick-sam3-prompts --camera robot/camera --json '{"prompts": [...], "stamp": ...}'
                             [--node sam3] [--timeout 10] [--connect ...] [--listen ...] [--config FILE]
 
 The queryable answers a query without payload with the prompts (JSON); one with a JSON payload replaces them all and
@@ -78,10 +78,10 @@ def describe(prompts: list[Prompt], stamp: int | None) -> dict:
 
 
 def main(argv=None) -> int:
-    from blick import topics  # noqa: PLC0415
-    from blick.session import add_arguments, open_from_args  # noqa: PLC0415
+    from xblick import topics  # noqa: PLC0415
+    from xblick.session import add_arguments, open_from_args  # noqa: PLC0415
 
-    parser = argparse.ArgumentParser(prog="durchblick-sam3-prompts", description=__doc__,
+    parser = argparse.ArgumentParser(prog="xblick-sam3-prompts", description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--camera", required=True, help="the camera's base, e.g. robot/camera")
     parser.add_argument("--node", default="sam3", help="the node's part of the topic: <camera>/<node>/prompts")
@@ -111,14 +111,14 @@ def main(argv=None) -> int:
     finally:
         session.close()
     if not replies:
-        print(f"durchblick-sam3-prompts: no answer on {key} within {args.timeout} s", file=sys.stderr)
+        print(f"xblick-sam3-prompts: no answer on {key} within {args.timeout} s", file=sys.stderr)
         return 1
     failed = False
     for reply in replies:
         if reply.ok is not None:
             print(reply.ok.payload.to_string())
         else:
-            print(f"durchblick-sam3-prompts: {reply.err.payload.to_string()}", file=sys.stderr)
+            print(f"xblick-sam3-prompts: {reply.err.payload.to_string()}", file=sys.stderr)
             failed = True
     return 1 if failed else 0
 

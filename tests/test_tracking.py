@@ -3,7 +3,7 @@
 import pytest
 import torch
 
-from durchblick_sam3.tracking import MAX_ID, Tracker
+from xblick_sam3.tracking import MAX_ID, Tracker
 
 H, W = 40, 60
 

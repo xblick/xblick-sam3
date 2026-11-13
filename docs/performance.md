@@ -1,6 +1,6 @@
 # Performance
 
-This page states how fast durchblick-sam3 is, how we measured it, which changes made it fast, and which changes did
+This page states how fast xblick-sam3 is, how we measured it, which changes made it fast, and which changes did
 not help. The [README](../README.md) has the short version.
 
 ## Result
@@ -179,7 +179,7 @@ The matching of the ids takes 0.4 ms per frame.
 ## With other nodes on one GPU
 
 A camera node rarely has a GPU to itself. We measured this node beside the robot mask node and nvblox with
-`tools/bench_nodes.py --sam3-dir` of durchblick-mapping.
+`tools/bench_nodes.py --sam3-dir` of xblick-mapping.
 
 Setup: the head camera of a simulation, replayed at 30 frames per second (1280 x 720, colour and depth). nvblox
 uses the mask. This node uses the words `box,can,bottle,cup` and `--compile default`. All nodes share one
@@ -218,7 +218,7 @@ this row, because the node segments a frame only after Boxer's boxes for it arri
 
 **Without MPS.** The GPU then gives each process a time slice in turn. We measured this at 1008. Boxer fell to 16
 frames per second and nvblox to 19. Run the nodes under MPS.
-[Sharing a GPU](https://github.com/xblick/durchblick/blob/main/docs/guides/sharing-a-gpu.md)
+[Sharing a GPU](https://github.com/xblick/xblick/blob/main/docs/guides/sharing-a-gpu.md)
 shows how.
 
 ## What did not help

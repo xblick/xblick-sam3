@@ -21,17 +21,6 @@ wheels = [
 ]
 
 [[package]]
-name = "blick"
-version = "0.4.0"
-source = { git = "https://github.com/xblick/durchblick?branch=main#d0f665007f684b707fb0b18b01c65d76348769c5" }
-dependencies = [
-    { name = "eclipse-zenoh" },
-    { name = "numpy" },
-    { name = "pillow" },
-    { name = "textual" },
-]
-
-[[package]]
 name = "click"
 version = "8.5.0"
 source = { registry = "https://pypi.org/simple" }
@@ -116,49 +105,6 @@ nvrtc = [
 ]
 nvtx = [
     { name = "nvidia-nvtx", marker = "platform_machine == 'aarch64' or platform_machine == 'x86_64'" },
-]
-
-[[package]]
-name = "durchblick-sam3"
-version = "0.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "blick" },
-    { name = "einops" },
-    { name = "numpy" },
-    { name = "opencv-python-headless" },
-    { name = "psutil" },
-    { name = "pycocotools" },
-    { name = "sam3" },
-    { name = "scipy" },
-    { name = "setuptools" },
-    { name = "torch" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "pytest" },
-    { name = "ruff" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "blick", git = "https://github.com/xblick/durchblick?branch=main" },
-    { name = "einops", specifier = ">=0.8" },
-    { name = "numpy", specifier = ">=1.26,<2" },
-    { name = "opencv-python-headless", specifier = ">=4.8" },
-    { name = "psutil", specifier = ">=5.9" },
-    { name = "pycocotools", specifier = ">=2.0" },
-    { name = "sam3", git = "https://github.com/facebookresearch/sam3.git?branch=main" },
-    { name = "scipy", specifier = ">=1.11" },
-    { name = "setuptools", specifier = "<81" },
-    { name = "torch", specifier = ">=2.7", index = "https://download.pytorch.org/whl/cu130" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "pytest", specifier = ">=8" },
-    { name = "ruff", specifier = ">=0.6" },
 ]
 
 [[package]]
@@ -1024,4 +970,58 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/d6/f1/c123f902bc2ff9e9c2ab66241b8872204df87cbb18ecdf035e120860fedc/wcwidth-0.9.4-cp310-abi3-win_amd64.whl", hash = "sha256:f28d77153303450ee13ebbe888297e75cf532c754555b6cabafc9bdda16c421c", size = 597780, upload-time = "2026-10-24T18:11:36.952Z" },
     { url = "https://files.pythonhosted.org/packages/4b/88/1cb5ddaf5510b918e01aa95fc4b68df91dead784b63e4931037c5673e85f/wcwidth-0.9.4-cp310-abi3-win_arm64.whl", hash = "sha256:2b58fc8cf2de1bf9cdb68b8beaa5be198742414a7c8cd97aa51ec039783ffa49", size = 598786, upload-time = "2026-10-24T18:11:30.886Z" },
     { url = "https://files.pythonhosted.org/packages/6f/0c/309b1813b230d1dbbd6f2c2ab2bb21ef68992358977605d9ef289bbfedcc/wcwidth-0.9.4-py3-none-any.whl", hash = "sha256:901eace6d2dd25ebb917d0ce5db18e5c537e1504c905cf32f0d006c12098b05d", size = 301806, upload-time = "2026-10-24T18:10:52.651Z" },
+]
+
+[[package]]
+name = "xblick"
+version = "0.5.0"
+source = { git = "https://github.com/xblick/xblick.git?rev=45908e67465647b39a6b185665bd91da175924ca#45908e67465647b39a6b185665bd91da175924ca" }
+dependencies = [
+    { name = "eclipse-zenoh" },
+    { name = "numpy" },
+    { name = "pillow" },
+    { name = "textual" },
+]
+
+[[package]]
+name = "xblick-sam3"
+version = "0.2.0"
+source = { editable = "." }
+dependencies = [
+    { name = "einops" },
+    { name = "numpy" },
+    { name = "opencv-python-headless" },
+    { name = "psutil" },
+    { name = "pycocotools" },
+    { name = "sam3" },
+    { name = "scipy" },
+    { name = "setuptools" },
+    { name = "torch" },
+    { name = "xblick" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+    { name = "ruff" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "einops", specifier = ">=0.8" },
+    { name = "numpy", specifier = ">=1.26,<2" },
+    { name = "opencv-python-headless", specifier = ">=4.8" },
+    { name = "psutil", specifier = ">=5.9" },
+    { name = "pycocotools", specifier = ">=2.0" },
+    { name = "sam3", git = "https://github.com/facebookresearch/sam3.git?branch=main" },
+    { name = "scipy", specifier = ">=1.11" },
+    { name = "setuptools", specifier = "<81" },
+    { name = "torch", specifier = ">=2.7", index = "https://download.pytorch.org/whl/cu130" },
+    { name = "xblick", git = "https://github.com/xblick/xblick.git?rev=45908e67465647b39a6b185665bd91da175924ca" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pytest", specifier = ">=8" },
+    { name = "ruff", specifier = ">=0.6" },
 ]
