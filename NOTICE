@@ -1,0 +1,14 @@
+durchblick-sam3
+Copyright 2026 David Schneider
+
+The code of this repository is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+Parts of others:
+
+- SAM 3's code by Meta (github.com/facebookresearch/sam3) is under Meta's SAM License. It is a Python dependency at
+  the commit that uv.lock fixes and not part of this repository.
+- The SAM 3.1 checkpoint by Meta (Hugging Face facebook/sam3.1, gated) is under Meta's SAM License. tools/setup.sh
+  downloads it into checkpoints/. It is not part of this repository.
+- tests/data/office.png is a frame of the sequence freiburg3_long_office_household of the TUM RGB-D dataset of the
+  Technical University of Munich, under the Creative Commons Attribution 4.0 International licence (CC BY 4.0,
+  https://creativecommons.org/licenses/by/4.0/).

@@ -1,0 +1,91 @@
+# AGENTS.md
+
+durchblick-sam3: Meta's SAM 3.1 detector as a Durchblick node. Per colour frame it publishes the instance masks of
+the prompts (words, exemplar boxes) and, with `--boxes TOPIC`, one mask per given box. Human documentation: README.md
+(entry), docs/topics.md, docs/prompts.md, docs/performance.md, docs/design.md. Style of all
+documentation: the core's docs/project/writing-docs.md. Transport-wide traps (Zenoh sessions and routers, CUDA rings,
+hanging tests, shared filesystems): AGENTS.md of the core repository (github.com/xblick/durchblick).
+
+## Commands
+
+```bash
+tools/setup.sh                                  # .venv as uv.lock fixes it + SAM 3.1 checkpoint (3.5 GB, SHA-256)
+.venv/bin/python -m pytest -q tests             # 29 tests; GPU tests skip without CUDA, need checkpoints/
+.venv/bin/python -m pytest -q tests/test_node.py
+.venv/bin/ruff check src tests                  # lint, 120 columns (pyproject)
+.venv/bin/python tools/bench.py IMAGES_DIR --words cup bottle --compile default --resolution 672   # speed tables
+uv lock --upgrade-package blick                 # take a newer Durchblick main (pin blick>=0.4,<0.5)
+.venv/bin/durchblick-sam3 --camera robot/camera --words "cup,bottle" --compile default   # needs zenohd on 7447
+```
+
+- Checkpoint is gated: Hugging Face account with access to `facebook/sam3.1`, logged in once
+  (`.venv/bin/hf auth login`) or `HF_TOKEN`, before `tools/setup.sh`.
+- SAM 3's code: from GitHub at the commit in `uv.lock`. Durchblick (`blick`): git main of github.com/xblick/durchblick.
+- `--compile default`: about 45 s of compiling before the first frame.
+- Without a camera: a simulation that publishes `robot/camera`, or `blick play <recording.mcap> --loop`.
+
+## Rules
+
+- Fail fast, no silent fallbacks. Refused prompts answer with an error and leave the prompts unchanged. With
+  `CUDA_MPS_PIPE_DIRECTORY` set, the node stops at start when no MPS daemon answers. Keep it so.
+- Licence separation: SAM 3's code is a dependency, the checkpoint a download. Copy nothing of either into the repo.
+- README.md and docs/ are the documentation of record. Change topics, options, speed tables and tests with the code.
+  Report measured numbers with what was measured, on which GPU and when.
+- Node default and class default differ: node `--resolution 672`, Python `Segmenter` 1008 unless `resolution=672`.
+  Do not change one and assume the other followed.
+- Any speed change to the segmenter keeps `tests/test_segmenter.py` green (masks against SAM 3's own forward pass,
+  IoU > 0.99).
+- Match the surrounding code. 120 columns, ruff rules in `pyproject.toml`.
+
+## Traps (each cost hours)
+
+- **bfloat16 and RoPE.** Symptom: SAM 3 finds nothing, no error. Cause: `Module.to(bf16)` also casts the ViT's complex
+  rotary-embedding buffers and drops their imaginary part. Fix: cast the image encoder's parameters only, once. The
+  decoder turns autocast off on purpose. Leave it.
+- **Resolution.** Only multiples of 336 (whole 24x24 attention windows). `segmenter.resize` recomputes everything that
+  depends on the grid (global blocks' RoPE, decoder box position-bias coordinates, neck position encodings). Add any
+  new grid-dependent cache there.
+- **Exemplar boxes.** Symptom: wrong objects on later frames (measured). Cause: re-encoding the box on a later frame
+  pools whatever is there by then. Fix: encode on the box's own frame, once, reuse. Prompts have a `stamp`. The node
+  keeps `--history` frames (30).
+- **`--compile`.** Compiled statically, a new prompt count stalls 2 s, a new exemplar count 20-27 s. Fix in place:
+  grounding transformer and mask head compiled `dynamic=True`, `warm_up` compiles both graphs (one prompt, several).
+  Tried without gain: `max-autotune`, `reduce-overhead`, FP8, token-major relayout of the attention inputs.
+- **Instance encoding.** `mono16`, never `16UC1`. REP 118 makes `16UC1` depth, and viewers draw it as a point cloud.
+- **SAM 3's packaging.** Misses imports (psutil, scipy, cv2, einops, pycocotools), needs `setuptools<81`
+  (`pkg_resources` for its tokenizer). All listed in `pyproject.toml`. Keep them when bumping SAM 3.
+- **SAM 3.1's Object Multiplex tracker.** Unused on purpose: slower, loads a whole video up front, yields batches,
+  `start_session` passes `offload_state_to_cpu`, which the multiplex `init_state` lacks. Numbers: docs/design.md.
+- **Queries in tests.** Symptom: query gets no answer. Cause: a session with only `--connect` does not route queries
+  between two clients. Fix: give the node `--listen` (as `tests/test_node.py`), or no endpoints with a router on 7447.
+- **Hanging tests.** Zenoh threads keep a process alive. Run node tests in the background with `timeout`.
+- **`--boxes`.** The node then follows the pace of the box messages. It segments each on the colour frame of its
+  stamp. It counts and drops box messages whose frame is gone (older than `--history`, or not there within 0.5 s).
+
+## Layout
+
+| Path | Content |
+| --- | --- |
+| `src/durchblick_sam3/segmenter.py` | `Segmenter`, `Prompt`, `BoxHead`: batched words, `resize`, compile and warm-up |
+| `src/durchblick_sam3/tracking.py` | mask-IoU id tracker (`--match-iou`, `--max-missing`), instance image |
+| `src/durchblick_sam3/node.py` | the node `durchblick-sam3`: streams, boxes, prompts queryable, diagnostics |
+| `src/durchblick_sam3/prompts.py` | client `durchblick-sam3-prompts`, request parsing |
+| `tools/setup.sh`, `tools/bench.py` | setup, timing on an image directory |
+| `tests/`, `tests/data/office.png` | segmenter, node over real Zenoh sessions, tracking, a TUM RGB-D frame |
+| `checkpoints/` | `sam3.1_multiplex.pt` (downloaded, not committed) |
+| `docs/` | topics, prompts, performance, design |
+
+## Defaults
+
+| What | Value |
+| --- | --- |
+| Input | `<camera>/color` (`rgb8`, `rgba8`, `bgr8`, `bgra8`, `mono8`) with `camera_info` |
+| Outputs | `<camera>/sam3/detections_2d`, `<camera>/sam3/instances` (`mono16`), status `sam3` on `<camera>/diagnostics` |
+| Queryable | `<camera>/sam3/prompts` (JSON) |
+| `--node` | `sam3` |
+| `--threshold` / `--match-iou` / `--max-missing` | 0.5 / 0.3 / 15 |
+| `--resolution` / `--history` / `--max-hz` | 672 / 30 / 30 |
+| `--local` / `--device` / `--compile` | `auto` / `cuda` / off |
+| Box message wait for its frame | 0.5 s (`FRAME_WAIT_S`) |
+| Environment | `HF_TOKEN` (setup), `UV` (setup), `CUDA_MPS_PIPE_DIRECTORY` (MPS expected) |
+| Consumers | durchblick-foundationpose and the mesh makers read `instances`, durchblick-tapnext seeds on it, `blick rerun --segmentation` draws it |
