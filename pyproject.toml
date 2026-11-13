@@ -38,7 +38,6 @@ build-backend = "uv_build"
 index-strategy = "unsafe-best-match"
 
 [tool.uv.sources]
-"xblick" = { git = "https://github.com/xblick/xblick.git", rev = "45908e67465647b39a6b185665bd91da175924ca" }
 "sam3" = { git = "https://github.com/facebookresearch/sam3.git", branch = "main" }
 "torch" = { index = "pytorch-cu130" }
 
