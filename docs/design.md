@@ -110,7 +110,8 @@ terms of the SAM License before.
 
 `weights.py` names the checkpoint: the gated Hugging Face repository `facebook/sam3.1` at a fixed commit, the file,
 its SHA-256 and its size. The commit is the one that `main` pointed at on 2026-11-14. Hugging Face states for the
-file there the SHA-256 that the code checks. The node and `tools/setup.sh` use this one place.
+file there the SHA-256 that the code checks. The node and `tools/setup.sh` use this one place. The download itself (lock, `.part` files, checks, progress) is the core's `xblick.weights`:
+`weights.STORE` is the node's `xblick.weights.Store`.
 
 At its start, before it loads the model, the node checks that `checkpoints/sam3.1_multiplex.pt` exists. When it
 exists, the node opens no network connection and writes no file, so it starts offline. When it is missing, the node
@@ -128,7 +129,7 @@ A failure ends the node with one line that says what to do. Without access or lo
 download end the node at once with the exit code 130 or 143. The node then removes the `.part` file.
 
 `--download-only` downloads and checks the checkpoint, then ends. It also checks the SHA-256 of a checkpoint that
-exists. It needs no camera, no Zenoh router and no GPU. `weights.parse_args` lifts the requirement of `--camera`
+exists. It needs no camera, no Zenoh router and no GPU. `xblick.weights.parse_args` lifts the requirement of `--camera`
 when the command line contains `--download-only`. `--no-download` ends the node when the checkpoint is missing and
 names it. It is a read-only parameter like every other start option. `--download-only` is a mode of the command
 line and has no parameter.

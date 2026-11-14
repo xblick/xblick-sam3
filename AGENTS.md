@@ -10,13 +10,13 @@ hanging tests, shared filesystems): AGENTS.md of the core repository (github.com
 
 ```bash
 tools/setup.sh                                  # .venv as uv.lock fixes it, then xblick-sam3 --download-only
-.venv/bin/python -m pytest -q tests             # 52 tests; GPU tests skip without CUDA, need checkpoints/
-.venv/bin/python -m pytest -q tests/test_weights.py  # CPU, 10 s: downloads from a local HTTP server
+.venv/bin/python -m pytest -q tests             # 40 tests; GPU tests skip without CUDA, need checkpoints/
+.venv/bin/python -m pytest -q tests/test_weights.py  # CPU, 4 s: the node's files and its start up to the weights (the download: the core's tests)
 .venv/bin/xblick-sam3 --download-only           # SAM 3.1 checkpoint (3.5 GB) if missing, SHA-256 checked, exit 0
 .venv/bin/python -m pytest -q tests/test_node.py
 .venv/bin/ruff check src tests                  # lint, 120 columns (pyproject)
 .venv/bin/python tools/bench.py IMAGES_DIR --words cup bottle --compile default --resolution 672   # speed tables
-uv lock                                         # after a new core rev in pyproject (pin xblick>=0.5.0,<0.6)
+uv lock                                         # after a new core rev in pyproject (pin xblick>=0.5.3,<0.6)
 .venv/bin/xblick-sam3 --camera test/camera --words "cup,bottle" --compile default   # needs zenohd on 7447
 ```
 
@@ -33,14 +33,14 @@ uv lock                                         # after a new core rev in pyproj
 - Fail fast, no silent fallbacks. Refused prompts answer with an error and leave the prompts unchanged. With
   `CUDA_MPS_PIPE_DIRECTORY` set, the node stops at start when no MPS daemon answers. Keep it so.
 - Weights: `weights.py` is the one place (`CHECKPOINT`, its repository, SHA-256, size, `TERMS`; `segmenter.py`
-  imports `CHECKPOINT`). `weights.ensure` runs at the start before the model loads; `--download-only` runs it
+  imports `CHECKPOINT`). `weights.STORE.ensure` runs at the start before the model loads; `--download-only` runs it
   alone. File there: no network, no file written (`test_weights.py` checks it). Keep it so.
 - Downloads: `<name>.part` in `checkpoints/`, renamed after the SHA-256 check, under the lock
   `checkpoints/.download.lock`. Never let a partial or unchecked file get its final name. No fallbacks.
-- `--download-only` and `--camera`: `weights.parse_args` lifts `required` when the token `--download-only` is
+- `--download-only` and `--camera`: `xblick.weights.parse_args` lifts `required` when the token `--download-only` is
   spelled out. `download_only` is in `leave_out` of `declare_options`; `no_download` is a read-only parameter.
 - A wrong SHA-256 keeps `<name>.part` (the error names it: remove it). Ctrl-C during a download: exit 130, SIGTERM:
-  143 (`weights._stoppable`), the `.part` file removed.
+  143 (`xblick.weights`), the `.part` file removed.
 - Licence separation: SAM 3's code is a dependency, the checkpoint a download. Copy nothing of either into the repo.
 - README.md and docs/ are the documentation of record. Change topics, options, speed tables and tests with the code.
   Report measured numbers with what was measured, on which GPU and when.
@@ -82,7 +82,7 @@ uv lock                                         # after a new core rev in pyproj
 | `src/xblick_sam3/segmenter.py` | `Segmenter`, `Prompt`, `BoxHead`: batched words, `resize`, compile and warm-up |
 | `src/xblick_sam3/tracking.py` | mask-IoU id tracker (`--match-iou`, `--max-missing`), instance image |
 | `src/xblick_sam3/node.py` | the node `xblick-sam3`: streams, boxes, prompts queryable, diagnostics |
-| `src/xblick_sam3/weights.py` | `CHECKPOINT`, `TERMS`, `needed`, `ensure`, `--download-only`/`--no-download`; from `Weight` on the same in every node |
+| `src/xblick_sam3/weights.py` | `CHECKPOINT`, `TERMS`, `needed`, `STORE` (the core's `xblick.weights.Store`: the download, `--download-only`/`--no-download`) |
 | `src/xblick_sam3/prompts.py` | client `xblick-sam3-prompts`, request parsing |
 | `tools/setup.sh`, `tools/bench.py` | setup, timing on an image directory |
 | `tests/`, `tests/data/office.png` | segmenter, node over real Zenoh sessions, tracking, a TUM RGB-D frame |

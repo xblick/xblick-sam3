@@ -136,7 +136,7 @@ The measurements, the method and what did not help: [docs/performance.md](docs/p
 
 ## Limits
 
-- Version 0.2.2. We tested the node on recorded frames and on the replayed head camera of a simulation, beside the
+- Version 0.2.3. We tested the node on recorded frames and on the replayed head camera of a simulation, beside the
   other Durchblick nodes. We have not tested it on a robot.
 - We tested prompts over Zenoh and `--boxes` on recorded frames and in the tests. We have not tested `--boxes` live
   on Boxer's boxes.
