@@ -40,6 +40,10 @@ Details: [docs/topics.md](docs/topics.md).
    tools/setup.sh
    ```
 
+   Before it downloads SAM 3, the script names the terms of the SAM License and asks whether to go on. A script
+   without a terminal accepts them with `tools/setup.sh --accept-model-terms` or with
+   `XBLICK_SAM3_ACCEPT_MODEL_TERMS=yes`. Without either it ends with an error and downloads nothing.
+
    The first call stops at the download, because you are not logged in yet.
 3. Log in once, or set `HF_TOKEN` to your token.
 
