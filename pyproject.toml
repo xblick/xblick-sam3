@@ -1,10 +1,10 @@
 [project]
 name = "xblick-sam3"
-version = "0.2.0"
+version = "0.2.1"
 description = "Meta's SAM 3.1 (open-vocabulary instance segmentation) as a Durchblick vision node"
 readme = "README.md"
-license = "Apache-2.0"
-license-files = ["LICENSE", "NOTICE"]
+license = "Apache-2.0 AND LicenseRef-SAM-License"
+license-files = ["LICENSE", "NOTICE", "LICENSES/SAM-License.txt"]
 authors = [{ name = "David Schneider" }]
 requires-python = ">=3.12,<3.13"
 dependencies = [

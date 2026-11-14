@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1 (2026-11-14)
+
+`src/xblick_sam3/segmenter.py` is now under Meta's SAM License (`LICENSES/SAM-License.txt`): it assembles and adapts
+SAM 3's detector from Meta's model code and is a derivative work of SAM 3. Everything else stays under the Apache
+License 2.0. The README names the terms of the SAM License that bind whoever uses the node. No change of the code.
+
 ## 0.2.0 (2026-11-13)
 
 Every name in code, on the wire and on disk is `xblick` now. Only the prose name of the project stays Durchblick.

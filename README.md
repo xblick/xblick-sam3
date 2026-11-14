@@ -28,7 +28,8 @@ Details: [docs/topics.md](docs/topics.md).
 - Durchblick 0.5 or newer, below 0.6 (Python package `xblick`). The setup script installs it from source.
 - [uv](https://docs.astral.sh/uv/) and git.
 - A Hugging Face account with access to the gated model [facebook/sam3.1](https://huggingface.co/facebook/sam3.1).
-- SAM 3's code and the SAM 3.1 checkpoint are under Meta's SAM License. Read it in SAM 3's repository.
+- SAM 3's code and the SAM 3.1 checkpoint are under Meta's SAM License. Whoever uses the node uses them and is bound
+  by it, see [Licence and credits](#licence-and-credits).
 
 ## Install
 
@@ -120,7 +121,7 @@ The measurements, the method and what did not help: [docs/performance.md](docs/p
 
 ## Limits
 
-- Version 0.2.0. We tested the node on recorded frames and on the replayed head camera of a simulation, beside the
+- Version 0.2.1. We tested the node on recorded frames and on the replayed head camera of a simulation, beside the
   other Durchblick nodes. We have not tested it on a robot.
 - We tested prompts over Zenoh and `--boxes` on recorded frames and in the tests. We have not tested `--boxes` live
   on Boxer's boxes.
@@ -141,13 +142,24 @@ The measurements, the method and what did not help: [docs/performance.md](docs/p
 
 ## Licence and credits
 
-SAM 3 and the SAM 3.1 checkpoint are Meta's work under the SAM License, which is in SAM 3's repository. This
-repository contains no copy of them. SAM 3's code is a dependency at the commit that `uv.lock` fixes, and the setup
-script downloads the checkpoint.
+This repository has two licences:
+
+- `src/xblick_sam3/segmenter.py` is under Meta's SAM License, see [LICENSES/SAM-License.txt](LICENSES/SAM-License.txt).
+  It assembles and adapts SAM 3's detector from Meta's model code, which makes it a derivative work of SAM 3.
+- Everything else is under the Apache License 2.0, see [LICENSE](LICENSE).
+
+[NOTICE](NOTICE) names the copyright holder and the parts of others.
+
+SAM 3 and the SAM 3.1 checkpoint are Meta's work under the SAM License. This repository contains no copy of them.
+SAM 3's code is a dependency at the commit that `uv.lock` fixes, and the setup script downloads the checkpoint.
+Whoever runs the node uses both and is bound by the SAM License. Among its terms:
+
+- SAM 3 may not be used for military or warfare purposes, nuclear industries or applications, espionage, the
+  development or use of guns or illegal weapons, or activities subject to ITAR (clause 1.b.v).
+- A publication of research done with SAM 3 must acknowledge its use (clause 1.b.ii).
+- Whoever passes SAM 3 or a derivative work of it on, `segmenter.py` included, does so under the SAM License and
+  with a copy of it (clause 1.b.i).
 
 `tests/data/office.png` is a frame of the sequence `freiburg3_long_office_household` of the TUM RGB-D dataset of the
 Technical University of Munich. It is under the
 [Creative Commons Attribution 4.0 International licence](https://creativecommons.org/licenses/by/4.0/) (CC BY 4.0).
-
-The code of this repository is under the Apache License 2.0, see [LICENSE](LICENSE). [NOTICE](NOTICE) names the
-copyright holder and the parts of others.

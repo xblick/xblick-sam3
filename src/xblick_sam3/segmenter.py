@@ -1,3 +1,10 @@
+# SPDX-License-Identifier: LicenseRef-SAM-License
+#
+# This file is a derivative work of the SAM Materials (SAM 3 by Meta, github.com/facebookresearch/sam3): it assembles
+# and adapts SAM 3's detector from Meta's model code. It is distributed under the terms of Meta's SAM License, see
+# LICENSES/SAM-License.txt. Modifications: Copyright 2026 David Schneider. The other files of this repository are
+# under the Apache License 2.0 (LICENSE).
+
 """SAM 3.1's detector on single images: instance masks of every prompt of a list, all prompts in one batch; and,
 optionally, SAM's interactive head: one mask per given box.
 
