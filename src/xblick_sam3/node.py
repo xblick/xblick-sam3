@@ -33,9 +33,10 @@ A frame without instances publishes an empty array and an all-zero image (a read
 processes as fast as SAM 3.1 runs, always the newest frame; frames per second, instances per frame and the time from
 frame to results go to ``<camera>/diagnostics`` (status ``sam3``) once a second.
 
-Weights (weights.py): a missing SAM 3.1 checkpoint is downloaded at the start, before the model loads (gated: an
-account with access to facebook/sam3.1, logged in); --no-download ends the node instead. ``xblick-sam3
---download-only`` only downloads and checks it (no camera, no Zenoh, no GPU), for preparation scripts.
+Weights (weights.py; in the node's cache directory ~/.cache/xblick/sam3, or --weights-dir): a missing SAM 3.1 checkpoint
+is downloaded at the start, before the model loads (gated: an account with access to facebook/sam3.1, logged in);
+--no-download ends the node instead. ``xblick-sam3 --download-only`` only downloads and checks it (no camera, no Zenoh,
+no GPU), for preparation scripts.
 """
 
 from __future__ import annotations
@@ -143,8 +144,8 @@ def main(argv=None) -> int:
                         help="the size frames are scaled to: 672 (half the time a frame), or SAM 3's own 1008 (README, "
                              "\"Speed\")")
     parser.add_argument("--checkpoint", default=None,
-                        help="SAM 3.1's checkpoint (default: checkpoints/sam3.1_multiplex.pt, downloaded at the first "
-                             "start)")
+                        help="SAM 3.1's checkpoint (default: sam3.1_multiplex.pt in the node's cache directory, "
+                             "~/.cache/xblick/sam3 or --weights-dir, downloaded at the first start)")
     parser.add_argument("--device", default="cuda")
     xblick_weights.add_arguments(parser)  # --download-only (a mode of the command line), --no-download
     add_arguments(parser)  # --connect, --listen, --config; default: the PC's Zenoh router
@@ -154,7 +155,8 @@ def main(argv=None) -> int:
     node.Parameters.add_arguments(parser)  # --param NAME:=VALUE, --params-file, --dump-params, --params-read-only
     args = xblick_weights.parse_args(parser, argv)  # --download-only: --camera not required
     if args.download_only:
-        return weights.STORE.download_only(weights.needed(args.checkpoint))
+        return weights.store_for(parser, args).download_only(
+            weights.needed(args.checkpoint), options=weights.options(args))
     mps.check()  # with CUDA_MPS_PIPE_DIRECTORY (MPS meant) its daemon has to run: else stop here
     camera = topics.check_name(args.camera)
     # the options as parameters (the terminal interface shows them): read-only, but those LIVE, which the loop reads
@@ -170,12 +172,14 @@ def main(argv=None) -> int:
 
     # sam3's own imports: pkg_resources' deprecation (setuptools)
     node.start("xblick-sam3", ignore=["pkg_resources is deprecated"], max_hz=args.max_hz, local=args.local)
+    store = weights.store_for(parser, args)  # --weights-dir, also given as a parameter
     try:
-        weights.STORE.ensure(weights.needed(args.checkpoint or None), download=not args.no_download)
+        store.ensure(weights.needed(args.checkpoint or None), download=not args.no_download,
+                     options=weights.options(args))
     except xblick_weights.WeightsError as error:
         params.close()
         session.close()
-        return weights.STORE.fail(error)
+        return store.fail(error)
 
     import torch  # noqa: PLC0415 - with the model, after the arguments are checked
 
@@ -186,7 +190,7 @@ def main(argv=None) -> int:
     cuda_index = device.index if device.index is not None else 0
     segmenter = Segmenter(words, threshold=args.threshold, device=device, compile=args.compile,
                           resolution=args.resolution, box_head=args.boxes is not None,
-                          **({"checkpoint": args.checkpoint} if args.checkpoint else {}))
+                          checkpoint=args.checkpoint or store.file(weights.needed()[0]))
     prompts_stamp = None  # the frame the prompts' boxes are in
     tracker = Tracker(min_iou=args.match_iou, max_missing=args.max_missing)
     wake = threading.Event()

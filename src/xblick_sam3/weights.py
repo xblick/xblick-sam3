@@ -5,7 +5,8 @@ This module is the one list of them: the node's start and ``tools/setup.sh`` (th
 missing file is downloaded under a temporary name in its directory (``<name>.part``), checked and only then renamed,
 all under a file lock, so that two nodes started at once download once and never read half a file.
 
-* ``CHECKPOINT``: SAM 3.1's checkpoint, ``checkpoints/sam3.1_multiplex.pt`` from Hugging Face's gated
+* ``CHECKPOINT``: SAM 3.1's checkpoint, ``sam3.1_multiplex.pt`` in the node's cache directory
+  (``~/.cache/xblick/sam3``, ``--weights-dir``; ``STORE.file``), from Hugging Face's gated
   facebook/sam3.1 (an account with access, logged in with ``hf auth login`` or HF_TOKEN), checked by its SHA-256
 * ``needed(checkpoint)``: the file a start with ``--checkpoint`` reads (none for a file of one's own)
 
@@ -22,10 +23,11 @@ from pathlib import Path
 from xblick.weights import HuggingFace, Store, Weight
 
 PROG = "xblick-sam3"
+NODE = "sam3"  # the short name: its cache directory is ~/.cache/xblick/sam3
 REQUIRED = ()  # (path, what): code from tools/setup.sh that must be there first; none here
 REPO = Path(__file__).resolve().parents[2]
-WEIGHTS = REPO / "checkpoints"
-CHECKPOINT = WEIGHTS / "sam3.1_multiplex.pt"
+FORMER = REPO / "checkpoints"  # the weights' place before 0.2.4 (the checkout): not used, the store names the move
+CHECKPOINT = Path("sam3.1_multiplex.pt")  # below the store's root
 # Hugging Face repository (gated) and the commit its main was on (2026-11-14); the file there has CHECKPOINT_SHA256
 CHECKPOINT_SOURCE = ("facebook/sam3.1", "daa63191845a41281374e725f4c9e51c7a824460")
 CHECKPOINT_SHA256 = "0567debeec80ba4ac6369540c6c248025283cb3ff2b92827509e57e2b3541cb6"
@@ -46,8 +48,22 @@ def needed(checkpoint: str | None = None) -> list[Weight]:
     if checkpoint is not None:
         return []
     repo, revision = CHECKPOINT_SOURCE
-    return [Weight(WEIGHTS / CHECKPOINT.name, HuggingFace(repo, revision, CHECKPOINT.name, gated=True),
+    return [Weight(CHECKPOINT, HuggingFace(repo, revision, CHECKPOINT.name, gated=True),
                    CHECKPOINT_SIZE, CHECKPOINT_SHA256)]
 
 
-STORE = Store(PROG, WEIGHTS, TERMS, REQUIRED, repo=REPO)  # the download (xblick.weights), its lock in WEIGHTS
+def options(args) -> list[str]:
+    """The options that select the weights (and --weights-dir), for the download command the lines name."""
+    return [] + (["--weights-dir", args.weights_dir] if args.weights_dir else [])
+
+
+def store_for(parser, args) -> Store:
+    """STORE at --weights-dir (not given: the node's cache directory); a wrong --weights-dir is an argument error."""
+    try:
+        return STORE.at(args.weights_dir)
+    except ValueError as error:
+        parser.error(f"--weights-dir: {error}")
+
+
+# the download (xblick.weights): the root is the node's cache directory, its lock there
+STORE = Store(PROG, node=NODE, terms=TERMS, required=REQUIRED, repo=REPO, former=[FORMER])

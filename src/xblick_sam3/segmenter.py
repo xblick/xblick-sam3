@@ -28,8 +28,8 @@ from dataclasses import dataclass
 import torch
 import torch.nn.functional as F
 
-# SAM 3.1's checkpoint (Hugging Face's gated facebook/sam3.1) where weights.py downloads it
-from .weights import CHECKPOINT
+# SAM 3.1's checkpoint (Hugging Face's gated facebook/sam3.1): where weights.py downloads it, the node's cache directory
+from .weights import STORE, needed
 
 RESOLUTION = 1008  # SAM 3's input: the image scaled to 1008 x 1008 (no padding), 72 x 72 patches of 14 pixels
 PATCH, WINDOW = 14, 24  # the ViT's patches (pixels) and its attention windows (patches)
@@ -216,13 +216,15 @@ class Segmenter:
     segment given boxes (``segment(image, boxes)``; ``BoxHead``)."""
 
     def __init__(self, prompts: list[Prompt | str], threshold: float = 0.5, device: str | torch.device = "cuda",
-                 dtype: torch.dtype | None = torch.bfloat16, checkpoint: str | os.PathLike = CHECKPOINT,
+                 dtype: torch.dtype | None = torch.bfloat16, checkpoint: str | os.PathLike | None = None,
                  compile: str | None = None, resolution: int = RESOLUTION, box_head: bool = False):
         self.threshold = threshold
         self.device = torch.device(device)
         self.dtype = dtype
         self.compile = compile
         self.resolution = resolution
+        if checkpoint is None:  # SAM 3.1's, in the node's cache directory (the node passes its --weights-dir's)
+            checkpoint = STORE.file(needed()[0])
         self.model, self.checkpoint = build_detector(checkpoint, self.device, rope_real=compile is not None,
                                                      resolution=resolution)
         self.box_head = BoxHead(load_checkpoint(checkpoint), resolution).to(self.device).eval() if box_head else None

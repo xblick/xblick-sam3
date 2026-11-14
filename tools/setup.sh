@@ -2,7 +2,7 @@
 # Sets xblick-sam3 up from scratch or updates it: the venv exactly as uv.lock fixes it (.venv; SAM 3's code from
 # GitHub at the locked commit, Durchblick from github.com/xblick/xblick) and, through xblick-sam3 --download-only
 # (weights.py), SAM 3.1's checkpoint (3.5 GB, SAM License, from Hugging Face's gated facebook/sam3.1; only if missing,
-# checked against its SHA-256) in checkpoints/. The node downloads it at its start too.
+# checked against its SHA-256) in ~/.cache/xblick/sam3 (the node's cache directory). The node downloads it at its start too.
 #
 #     tools/setup.sh
 #

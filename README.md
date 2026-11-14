@@ -50,7 +50,7 @@ Details: [docs/topics.md](docs/topics.md).
    .venv/bin/hf auth login
    ```
 
-4. Download the checkpoint (3.5 GB) into `checkpoints/`. The command checks its SHA-256.
+4. Download the checkpoint (3.5 GB) into `~/.cache/xblick/sam3/`. The command checks its SHA-256.
 
    ```bash
    .venv/bin/xblick-sam3 --download-only
@@ -64,6 +64,20 @@ the file and its size first. `--download-only` serves preparation scripts: it ne
 no GPU, and it exits with 0 when the checkpoint is complete. A machine that must never start a download on its own,
 such as a robot, starts the node with `--no-download`. The node then ends at once when the checkpoint is missing,
 and it names the file.
+
+### Where the weights are
+
+The node keeps its weights in its cache directory, `~/.cache/xblick/sam3/`. `XBLICK_HOME=/dir` moves it to `/dir/cache/sam3/`,
+and `XDG_CACHE_HOME` moves it as well. `--weights-dir DIR` names another directory. The place is the same for a
+checkout and for a pip install. [Where files are](https://github.com/xblick/xblick/blob/main/docs/reference/files.md) lists the places, and it shows how to copy the cache to a
+PC without internet.
+
+Up to version 0.2.3, the weights were in the checkout's `checkpoints/`. The node does not read them there. At its start it
+prints the command that moves them. In the checkout it is:
+
+```bash
+mkdir -p ~/.cache/xblick && mv checkpoints ~/.cache/xblick/sam3
+```
 
 ## Run
 
@@ -106,6 +120,7 @@ The options that most users change:
 | `--node` | `sam3` | The `sam3` part of the topic names. |
 | `--no-download` | off | End at once when the checkpoint is missing. The node downloads nothing. |
 | `--download-only` | off | Download the missing checkpoint, check it and end. `--camera` may be left out. |
+| `--weights-dir DIR` | the cache directory | where the weights are and go, in place of `~/.cache/xblick/sam3/` |
 
 All options, the prompt format and the Python class: [docs/prompts.md](docs/prompts.md).
 
@@ -136,7 +151,7 @@ The measurements, the method and what did not help: [docs/performance.md](docs/p
 
 ## Limits
 
-- Version 0.2.3. We tested the node on recorded frames and on the replayed head camera of a simulation, beside the
+- Version 0.2.4. We tested the node on recorded frames and on the replayed head camera of a simulation, beside the
   other Durchblick nodes. We have not tested it on a robot.
 - We tested prompts over Zenoh and `--boxes` on recorded frames and in the tests. We have not tested `--boxes` live
   on Boxer's boxes.

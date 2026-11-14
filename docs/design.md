@@ -111,11 +111,13 @@ terms of the SAM License before.
 `weights.py` names the checkpoint: the gated Hugging Face repository `facebook/sam3.1` at a fixed commit, the file,
 its SHA-256 and its size. The commit is the one that `main` pointed at on 2026-11-14. Hugging Face states for the
 file there the SHA-256 that the code checks. The node and `tools/setup.sh` use this one place. The download itself (lock, `.part` files, checks, progress) is the core's `xblick.weights`:
-`weights.STORE` is the node's `xblick.weights.Store`.
+`weights.STORE` is the node's `xblick.weights.Store`. Its root is the node's cache directory, `~/.cache/xblick/sam3/`
+(`XBLICK_HOME`, `XDG_CACHE_HOME`, `--weights-dir`). The checkout's `checkpoints/` is the former place: the node does not
+read weights there, and it prints the command that moves them.
 
-At its start, before it loads the model, the node checks that `checkpoints/sam3.1_multiplex.pt` exists. When it
+At its start, before it loads the model, the node checks that `~/.cache/xblick/sam3/sam3.1_multiplex.pt` exists. When it
 exists, the node opens no network connection and writes no file, so it starts offline. When it is missing, the node
-takes the lock `checkpoints/.download.lock`. It prints the terms of the SAM License, the file and its size, and it
+takes the lock `~/.cache/xblick/sam3/.download.lock`. It prints the terms of the SAM License, the file and its size, and it
 downloads the file. The node writes it as `sam3.1_multiplex.pt.part` and renames it after the check. The file
 therefore has its final name only when it is complete. A second node that starts at the same time waits for the
 lock. It then finds the file and does not download it again. With `--checkpoint FILE` the node downloads nothing.

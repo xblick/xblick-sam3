@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.4 (2026-11-14)
+
+- The weights moved out of the checkout into the node's cache directory, `~/.cache/xblick/sam3/`. `XBLICK_HOME` and
+  `XDG_CACHE_HOME` move it, and `--weights-dir DIR` names another directory. Weights at the former place, the
+  checkout's `checkpoints/`, are not used. The node prints the command that moves them. In the checkout it is
+  `mkdir -p ~/.cache/xblick && mv checkpoints ~/.cache/xblick/sam3`.
+- `--weights-dir DIR` is a new start option and a read-only parameter.
+- The message about a missing file names the full download command.
+- The node needs `xblick>=0.5.5,<0.6`.
+- `Segmenter` takes SAM 3.1's checkpoint from the node's cache directory unless given one; the node passes the
+  file of its store (`--weights-dir`) or `--checkpoint`.
+
 ## 0.2.3 (2026-11-14)
 
 - The download of the weights is the core's `xblick.weights` (xblick 0.5.3). The node's own copy of that code is
