@@ -1,6 +1,9 @@
 # xblick-sam3
 
 [![xblick core](https://img.shields.io/pypi/v/xblick?label=xblick%20core&color=blue)](https://github.com/xblick/xblick)
+[![tests](https://github.com/xblick/xblick-sam3/actions/workflows/tests.yml/badge.svg)](https://github.com/xblick/xblick-sam3/actions/workflows/tests.yml)
+[![licence](https://img.shields.io/badge/licence-Apache--2.0%20%2B%20SAM%20License-blue)](LICENSE)
+[![device](https://img.shields.io/badge/needs-NVIDIA%20GPU-76b900)](README.md)
 
 xblick-sam3 segments the objects in a camera's colour stream with Meta's
 [SAM 3.1](https://github.com/facebookresearch/sam3), an open-vocabulary instance segmentation model. You name the
