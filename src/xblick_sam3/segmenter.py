@@ -24,15 +24,15 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from pathlib import Path
 
 import torch
 import torch.nn.functional as F
 
+# SAM 3.1's checkpoint (Hugging Face's gated facebook/sam3.1) where weights.py downloads it
+from .weights import CHECKPOINT
+
 RESOLUTION = 1008  # SAM 3's input: the image scaled to 1008 x 1008 (no padding), 72 x 72 patches of 14 pixels
 PATCH, WINDOW = 14, 24  # the ViT's patches (pixels) and its attention windows (patches)
-# SAM 3.1's checkpoint (Hugging Face's gated facebook/sam3.1) where tools/setup.sh puts it
-CHECKPOINT = Path(__file__).resolve().parents[2] / "checkpoints" / "sam3.1_multiplex.pt"
 VISUAL = "visual"  # SAM 3's text of a prompt of boxes alone (Sam3Processor.add_geometric_prompt)
 WARM_UP_WORDS = ("object", "thing")  # Segmenter.warm_up's prompts
 # what Segmenter.set_prompts sets (warm_up keeps and restores it)
@@ -94,7 +94,7 @@ class Segmentation:
 
 def load_checkpoint(checkpoint: str | os.PathLike) -> dict:
     if not os.path.exists(checkpoint):
-        raise FileNotFoundError(f"{checkpoint}: no SAM 3.1 checkpoint (tools/setup.sh downloads it)")
+        raise FileNotFoundError(f"{checkpoint}: no SAM 3.1 checkpoint (xblick-sam3 --download-only downloads it)")
     state = torch.load(checkpoint, map_location="cpu", weights_only=True, mmap=True)
     return state.get("model", state)
 

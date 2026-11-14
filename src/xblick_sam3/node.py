@@ -3,7 +3,7 @@
     xblick-sam3 --camera test/camera [--words cup bottle "tomato soup can"] \\
                     [--boxes <camera>/boxer/detections_2d] [--history 30] \\
                     [--color <camera>/color] [--node sam3] [--threshold 0.5] [--compile max-autotune-no-cudagraphs]
-                    [--resolution 672] [--local shm|cuda]
+                    [--resolution 672] [--local shm|cuda] [--no-download]
                     [--connect ...] [--listen ...] [--config FILE]   (default: the PC's Zenoh router)
 
 What it segments:
@@ -32,6 +32,10 @@ and publishes, stamped as the frame and in its camera frame:
 A frame without instances publishes an empty array and an all-zero image (a reader's view clears). Without --boxes it
 processes as fast as SAM 3.1 runs, always the newest frame; frames per second, instances per frame and the time from
 frame to results go to ``<camera>/diagnostics`` (status ``sam3``) once a second.
+
+Weights (weights.py): a missing SAM 3.1 checkpoint is downloaded at the start, before the model loads (gated: an
+account with access to facebook/sam3.1, logged in); --no-download ends the node instead. ``xblick-sam3
+--download-only`` only downloads and checks it (no camera, no Zenoh, no GPU), for preparation scripts.
 """
 
 from __future__ import annotations
@@ -48,6 +52,7 @@ from xblick.camera import check_local
 from xblick.history import FrameHistory
 from xblick.session import add_arguments, open_from_args
 
+from . import weights
 from .prompts import PROMPTS, describe, parse
 
 FRAME_WAIT_S = 0.5  # how long a box message waits for its frame (newer than the newest received) before it is dropped
@@ -137,21 +142,25 @@ def main(argv=None) -> int:
                         help="the size frames are scaled to: 672 (half the time a frame), or SAM 3's own 1008 (README, "
                              "\"Speed\")")
     parser.add_argument("--checkpoint", default=None,
-                        help="SAM 3.1's checkpoint (default: checkpoints/sam3.1_multiplex.pt, from tools/setup.sh)")
+                        help="SAM 3.1's checkpoint (default: checkpoints/sam3.1_multiplex.pt, downloaded at the first "
+                             "start)")
     parser.add_argument("--device", default="cuda")
+    weights.add_arguments(parser)  # --download-only (a mode of the command line), --no-download
     add_arguments(parser)  # --connect, --listen, --config; default: the PC's Zenoh router
     # --max-hz: at most 30 frames/s by default (0 or none: every frame)
     # --local: auto (the CUDA ring on this GPU, else shared memory), shm or cuda
     node.add_arguments(parser, max_hz=30.0, local=("auto", "shm", "cuda"))
     node.Parameters.add_arguments(parser)  # --param NAME:=VALUE, --params-file, --dump-params, --params-read-only
-    args = parser.parse_args(argv)
+    args = weights.parse_args(parser, argv)  # --download-only: --camera not required
+    if args.download_only:
+        return weights.download_only(weights.needed(args.checkpoint))
     mps.check()  # with CUDA_MPS_PIPE_DIRECTORY (MPS meant) its daemon has to run: else stop here
     camera = topics.check_name(args.camera)
     # the options as parameters (the terminal interface shows them): read-only, but those LIVE, which the loop reads
     session = open_from_args(args)
     params = node.Parameters(session, args.node, camera)
     params.configure(args)
-    params.declare_options(parser, args, live=LIVE, leave_out=("camera", "node"))
+    params.declare_options(parser, args, live=LIVE, leave_out=("camera", "node", "download_only"))
     params.check_overrides()
     if args.history < 1:
         parser.error("--history: at least 1")
@@ -160,6 +169,12 @@ def main(argv=None) -> int:
 
     # sam3's own imports: pkg_resources' deprecation (setuptools)
     node.start("xblick-sam3", ignore=["pkg_resources is deprecated"], max_hz=args.max_hz, local=args.local)
+    try:
+        weights.ensure(weights.needed(args.checkpoint or None), download=not args.no_download)
+    except weights.WeightsError as error:
+        params.close()
+        session.close()
+        return weights.fail(error)
 
     import torch  # noqa: PLC0415 - with the model, after the arguments are checked
 

@@ -1,6 +1,6 @@
 [project]
 name = "xblick-sam3"
-version = "0.2.1"
+version = "0.2.2"
 description = "Meta's SAM 3.1 (open-vocabulary instance segmentation) as a Durchblick vision node"
 readme = "README.md"
 license = "Apache-2.0 AND LicenseRef-SAM-License"

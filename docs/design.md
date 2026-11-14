@@ -103,7 +103,37 @@ The node scales frames to 672. The Python class `Segmenter` keeps SAM 3's 1008 u
 ## Licence separation
 
 SAM 3's code and checkpoint are under Meta's SAM License. This repository contains no copy of either. The code is a
-dependency at the commit that `uv.lock` fixes. `tools/setup.sh` downloads the checkpoint.
+dependency at the commit that `uv.lock` fixes. The node downloads the checkpoint ("Weights" below) and prints the
+terms of the SAM License before.
+
+## Weights
+
+`weights.py` names the checkpoint: the gated Hugging Face repository `facebook/sam3.1`, the file, its SHA-256 and its
+size. The node and `tools/setup.sh` use this one place.
+
+At its start, before it loads the model, the node checks that `checkpoints/sam3.1_multiplex.pt` exists. When it
+exists, the node opens no network connection and writes no file, so it starts offline. When it is missing, the node
+takes the lock `checkpoints/.download.lock`. It prints the terms of the SAM License, the file and its size, and it
+downloads the file. The node writes it as `sam3.1_multiplex.pt.part` and renames it after the check. The file
+therefore has its final name only when it is complete. A second node that starts at the same time waits for the
+lock. It then finds the file and does not download it again. With `--checkpoint FILE` the node downloads nothing.
+
+The check compares the SHA-256 of the download with the one in `weights.py`. A wrong SHA-256 keeps the download as
+`.part`, and the error names it. Remove it, then start again. The progress is a line that updates in place on a
+terminal. In a log file it is one line per tenth of the file.
+
+A failure ends the node with one line that says what to do. Without access or login, the line names
+<https://huggingface.co/facebook/sam3.1>, `.venv/bin/hf auth login` and `HF_TOKEN`. Ctrl-C or SIGTERM during a
+download end the node at once with the exit code 130 or 143. The node then removes the `.part` file.
+
+`--download-only` downloads and checks the checkpoint, then ends. It also checks the SHA-256 of a checkpoint that
+exists. It needs no camera, no Zenoh router and no GPU. `weights.parse_args` lifts the requirement of `--camera`
+when the command line contains `--download-only`. `--no-download` ends the node when the checkpoint is missing and
+names it. It is a read-only parameter like every other start option. `--download-only` is a mode of the command
+line and has no parameter.
+
+The download sends `HF_TOKEN`, or the token of `hf auth login`, to Hugging Face only. `HF_ENDPOINT` changes the
+server, and `HF_HUB_OFFLINE=1` prevents the download.
 
 ## Tests
 
@@ -114,6 +144,7 @@ dependency at the commit that `uv.lock` fixes. `tools/setup.sh` downloads the ch
 | File | What it checks |
 | --- | --- |
 | `tests/test_segmenter.py` | The masks against SAM 3's own forward pass. The instance image against the masks. A frame without the words. 672 against 1008. The box head against the detector's masks. An exemplar box that finds its kind beside words that keep their instances. Refused prompts. |
+| `tests/test_weights.py` | Without a GPU, against a local HTTP server: the checkpoint's entry, no network use when it exists, a download through the Hugging Face path with its redirect, a wrong checksum, the answer without access, Ctrl-C and SIGTERM, two processes at once, the progress in a log file, `--download-only` and `--no-download`. |
 | `tests/test_tracking.py` | The id rules: moving objects, new objects, too little overlap, `--max-missing`, the wrap of the ids, the instance image. |
 | `tests/test_node.py` | The messages, prompt requests and colour encodings. The node as its own process on a published `bgr8` stream over real Zenoh sessions. The node with `--boxes` and its queryable. |
 

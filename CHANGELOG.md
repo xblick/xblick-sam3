@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.2.2 (2026-11-14)
+
+- The node downloads a missing SAM 3.1 checkpoint at its start, before the model loads. It prints the terms of the
+  SAM License, the file and its size first. With the checkpoint there it uses no network and writes no file.
+- `--download-only` downloads and checks the checkpoint, then exits 0. It needs no camera, Zenoh router or GPU, and
+  `--camera` may be left out. `tools/setup.sh` calls it after `uv sync`.
+- `--no-download` ends a start at once when the checkpoint is missing and names it. It is a read-only parameter.
+- Without access to `facebook/sam3.1` or a login, the node ends with one line that names the page, `hf auth login`
+  and `HF_TOKEN`.
+- `weights.py` is the one place of the checkpoint (`segmenter.CHECKPOINT` comes from there) and of the terms, which
+  moved from `tools/setup.sh` unchanged. `tools/setup.sh` now prints them only when the checkpoint is downloaded,
+  after `uv sync` has fetched SAM 3's code.
+- A download goes to `<name>.part` under the lock `checkpoints/.download.lock` and gets its final name after the
+  SHA-256 check.
+
 ## 0.2.1 (2026-11-14)
 
 `src/xblick_sam3/segmenter.py` is now under Meta's SAM License (`LICENSES/SAM-License.txt`): it assembles and adapts

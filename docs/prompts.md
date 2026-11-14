@@ -20,6 +20,8 @@ works, the `--boxes` mode, and the Python class behind the node.
 | `--resolution` | 672 | The size to which the node scales a frame. It must be a multiple of 336. |
 | `--checkpoint` | `checkpoints/sam3.1_multiplex.pt` | The SAM 3.1 checkpoint. |
 | `--device` | `cuda` | The GPU of the node. |
+| `--no-download` | off | End at once when the checkpoint is missing, and name it. The node downloads nothing. |
+| `--download-only` | off | Download the missing checkpoint, check its SHA-256 and end. The node needs no camera, Zenoh router or GPU for it, and `--camera` may be left out. |
 | `--max-hz` | 30 | The highest number of colour frames per second. `0` or `none` takes every frame. |
 | `--local` | `auto` | The transport for a camera on the same host: `auto`, `shm` or `cuda`. |
 | `--connect`, `--listen`, `--config` | the router of the PC | The Zenoh session, as for every Durchblick program. |

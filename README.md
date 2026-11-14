@@ -36,25 +36,34 @@ Details: [docs/topics.md](docs/topics.md).
 ## Install
 
 1. Ask for access on <https://huggingface.co/facebook/sam3.1>.
-2. Clone this repository and run the setup script. It creates `.venv` exactly as `uv.lock` fixes it.
+2. Clone this repository and run the setup script. It creates `.venv` exactly as `uv.lock` fixes it. Then it runs
+   `xblick-sam3 --download-only`, which prints the terms of the SAM License and downloads the checkpoint.
 
    ```bash
    tools/setup.sh
    ```
 
-   Before it downloads SAM 3, the script prints the terms of the SAM License.
-
-   The first call stops at the download, because you are not logged in yet.
+   The first call stops at the download, because you are not logged in yet. The error names the next step.
 3. Log in once, or set `HF_TOKEN` to your token.
 
    ```bash
    .venv/bin/hf auth login
    ```
 
-4. Run `tools/setup.sh` again. It downloads the checkpoint (3.5 GB) into `checkpoints/` and checks its SHA-256.
+4. Download the checkpoint (3.5 GB) into `checkpoints/`. The command checks its SHA-256.
+
+   ```bash
+   .venv/bin/xblick-sam3 --download-only
+   ```
 
 The venv contains PyTorch with CUDA 13 and SAM 3's code from GitHub at the commit that `uv.lock` fixes. If `HF_TOKEN`
 is set before step 2, the first call already downloads the checkpoint.
+
+The node itself also downloads a missing checkpoint at its start, before it loads the model. It prints the terms,
+the file and its size first. `--download-only` serves preparation scripts: it needs no camera, no Zenoh router and
+no GPU, and it exits with 0 when the checkpoint is complete. A machine that must never start a download on its own,
+such as a robot, starts the node with `--no-download`. The node then ends at once when the checkpoint is missing,
+and it names the file.
 
 ## Run
 
@@ -95,6 +104,8 @@ The options that most users change:
 | `--max-hz` | 30 | The highest number of colour frames per second. `0` or `none` takes every frame. |
 | `--local` | `auto` | How the node reads a camera on the same host: `auto`, `shm` or `cuda`. |
 | `--node` | `sam3` | The `sam3` part of the topic names. |
+| `--no-download` | off | End at once when the checkpoint is missing. The node downloads nothing. |
+| `--download-only` | off | Download the missing checkpoint, check it and end. `--camera` may be left out. |
 
 All options, the prompt format and the Python class: [docs/prompts.md](docs/prompts.md).
 
@@ -125,13 +136,15 @@ The measurements, the method and what did not help: [docs/performance.md](docs/p
 
 ## Limits
 
-- Version 0.2.1. We tested the node on recorded frames and on the replayed head camera of a simulation, beside the
+- Version 0.2.2. We tested the node on recorded frames and on the replayed head camera of a simulation, beside the
   other Durchblick nodes. We have not tested it on a robot.
 - We tested prompts over Zenoh and `--boxes` on recorded frames and in the tests. We have not tested `--boxes` live
   on Boxer's boxes.
 - The node treats every frame on its own. An object that the detector loses for more than 15 frames gets a new id.
 - We measured agreement between 672 and 1008. We did not measure accuracy against ground truth.
 - The node accepts only resolutions that are multiples of 336.
+- We tested the download against a local server. We have not downloaded the checkpoint from Hugging Face through
+  the node.
 
 ## Documentation
 
