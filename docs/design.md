@@ -108,8 +108,9 @@ terms of the SAM License before.
 
 ## Weights
 
-`weights.py` names the checkpoint: the gated Hugging Face repository `facebook/sam3.1`, the file, its SHA-256 and its
-size. The node and `tools/setup.sh` use this one place.
+`weights.py` names the checkpoint: the gated Hugging Face repository `facebook/sam3.1` at a fixed commit, the file,
+its SHA-256 and its size. The commit is the one that `main` pointed at on 2026-11-14. Hugging Face states for the
+file there the SHA-256 that the code checks. The node and `tools/setup.sh` use this one place.
 
 At its start, before it loads the model, the node checks that `checkpoints/sam3.1_multiplex.pt` exists. When it
 exists, the node opens no network connection and writes no file, so it starts offline. When it is missing, the node
@@ -118,7 +119,7 @@ downloads the file. The node writes it as `sam3.1_multiplex.pt.part` and renames
 therefore has its final name only when it is complete. A second node that starts at the same time waits for the
 lock. It then finds the file and does not download it again. With `--checkpoint FILE` the node downloads nothing.
 
-The check compares the SHA-256 of the download with the one in `weights.py`. A wrong SHA-256 keeps the download as
+The check compares the size and the SHA-256 of the download with those in `weights.py`. A wrong SHA-256 keeps the download as
 `.part`, and the error names it. Remove it, then start again. The progress is a line that updates in place on a
 terminal. In a log file it is one line per tenth of the file.
 

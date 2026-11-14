@@ -35,7 +35,8 @@ REQUIRED = ()  # (path, what): code from tools/setup.sh that must be there first
 REPO = Path(__file__).resolve().parents[2]
 WEIGHTS = REPO / "checkpoints"
 CHECKPOINT = WEIGHTS / "sam3.1_multiplex.pt"
-CHECKPOINT_SOURCE = ("facebook/sam3.1", "main")  # Hugging Face repository (gated), revision: checked by the SHA-256
+# Hugging Face repository (gated) and the commit its main was on (2026-11-14); the file there has CHECKPOINT_SHA256
+CHECKPOINT_SOURCE = ("facebook/sam3.1", "daa63191845a41281374e725f4c9e51c7a824460")
 CHECKPOINT_SHA256 = "0567debeec80ba4ac6369540c6c248025283cb3ff2b92827509e57e2b3541cb6"
 CHECKPOINT_SIZE = 3_502_755_717
 # The terms of what is downloaded, printed before the download (whoever downloads is the one who uses the model).
@@ -120,8 +121,8 @@ class Url:
 
 @dataclass(frozen=True)
 class Weight:
-    """One file the node reads: where it is (``path``), where it comes from (``source``), about how large it is
-    (``size``, bytes, for the announcement) and, where known, its SHA-256."""
+    """One file the node reads: where it is (``path``), where it comes from (``source``), its exact size (``size``,
+    bytes: announced, and a download of another length is refused) and, where known, its SHA-256."""
 
     path: Path
     source: object  # HuggingFace, Url or a source of the node's own: describe() and fetch(tmp, progress) -> SHA-256
@@ -219,8 +220,8 @@ def ensure(weights: list[Weight], *, download: bool = True, verify: bool = False
 
 
 def _download(w: Weight, out):
-    """One file: into ``<name>.part``, its SHA-256 checked where known, renamed. A failed check keeps the .part file
-    for a look; any other failure or an interrupt removes it."""
+    """One file: into ``<name>.part``, its size and (where known) its SHA-256 checked, renamed. A failed check keeps
+    the .part file for a look; any other failure or an interrupt removes it."""
     tmp = w.path.with_name(w.path.name + ".part")
     w.path.parent.mkdir(parents=True, exist_ok=True)
     print(f"{PROG}: {w.path.name} ({_size(w.size)}) from {w.source.describe()}", file=out, flush=True)
@@ -232,11 +233,14 @@ def _download(w: Weight, out):
         raise
     finally:
         progress.end()
+    if (length := tmp.stat().st_size) != w.size:
+        raise WeightsError(f"{_short(tmp)}: {length} bytes, expected {w.size}: the source changed or the download is "
+                           "damaged; remove it, then start again")
     if w.sha256 is not None and digest != w.sha256:
         raise WeightsError(f"{_short(tmp)}: wrong SHA-256 ({digest}, expected {w.sha256}): the source changed or the "
                            "download is damaged; remove it, then start again")
     os.replace(tmp, w.path)
-    print(f"{PROG}: {_short(w.path)}: " + ("SHA-256 checked" if w.sha256 else "complete") + ", in place",
+    print(f"{PROG}: {_short(w.path)}: " + ("size and SHA-256 checked" if w.sha256 else "size checked") + ", in place",
           file=out, flush=True)
 
 

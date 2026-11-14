@@ -10,7 +10,7 @@ hanging tests, shared filesystems): AGENTS.md of the core repository (github.com
 
 ```bash
 tools/setup.sh                                  # .venv as uv.lock fixes it, then xblick-sam3 --download-only
-.venv/bin/python -m pytest -q tests             # 50 tests; GPU tests skip without CUDA, need checkpoints/
+.venv/bin/python -m pytest -q tests             # 52 tests; GPU tests skip without CUDA, need checkpoints/
 .venv/bin/python -m pytest -q tests/test_weights.py  # CPU, 10 s: downloads from a local HTTP server
 .venv/bin/xblick-sam3 --download-only           # SAM 3.1 checkpoint (3.5 GB) if missing, SHA-256 checked, exit 0
 .venv/bin/python -m pytest -q tests/test_node.py

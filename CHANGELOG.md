@@ -14,6 +14,9 @@
   after `uv sync` has fetched SAM 3's code.
 - A download goes to `<name>.part` under the lock `checkpoints/.download.lock` and gets its final name after the
   SHA-256 check.
+- The download takes the checkpoint from a fixed commit of `facebook/sam3.1` (daa6319, where `main` was on
+  2026-11-14), no longer from `main`. Hugging Face states the same SHA-256 for the file there. A download is also
+  checked against the exact size.
 
 ## 0.2.1 (2026-11-14)
 

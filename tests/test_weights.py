@@ -28,6 +28,8 @@ TERMS_LINE = "SAM 3 is the work of Meta"  # the first line of weights.TERMS
 NETWORK = True  # the weights come from the network
 MODEL = ("xblick_sam3.segmenter", "Segmenter")  # what loads the model, after the weights
 
+WITHOUT_SHA256 = ()  # files whose source states no SHA-256
+
 
 def start_options(tmp_path) -> list[str]:
     """A start's required options."""
@@ -43,6 +45,7 @@ def stand_in(home, server, monkeypatch):
     """SAM 3.1's checkpoint as a stand-in on the local server, through HF_ENDPOINT: {path: content}."""
     monkeypatch.setenv("HF_ENDPOINT", server.url)
     monkeypatch.setattr(weights, "CHECKPOINT_SHA256", DATA_SHA)
+    monkeypatch.setattr(weights, "CHECKPOINT_SIZE", len(DATA))
     server.files["/sam3.1_multiplex.pt"] = DATA
     return {home / "sam3.1_multiplex.pt": DATA}
 
@@ -51,7 +54,10 @@ def test_the_file_is_the_gated_sam31_checkpoint_with_its_sha256():
     [w] = weights.needed()
     assert w.path == weights.WEIGHTS / "sam3.1_multiplex.pt" == weights.CHECKPOINT
     assert weights.WEIGHTS == weights.REPO / "checkpoints"
-    assert w.source == weights.HuggingFace("facebook/sam3.1", "main", "sam3.1_multiplex.pt", gated=True)
+    commit = "daa63191845a41281374e725f4c9e51c7a824460"  # main's commit on 2026-11-14, pinned
+    assert w.source == weights.HuggingFace("facebook/sam3.1", commit, "sam3.1_multiplex.pt", gated=True)
+    assert w.source.url().endswith(f"/facebook/sam3.1/resolve/{commit}/sam3.1_multiplex.pt")
+    assert w.size == 3_502_755_717
     assert w.sha256 == "0567debeec80ba4ac6369540c6c248025283cb3ff2b92827509e57e2b3541cb6" and w.size > 3.5e9
     assert weights.needed("/some/sam3.pt") == []  # a file of one's own: nothing to download
 
@@ -62,7 +68,8 @@ def test_without_access_the_node_says_how_to_get_it(home, server, stand_in, caps
     err = capsys.readouterr().err.strip().splitlines()
     assert len(err) == 1 and "https://huggingface.co/facebook/sam3.1" in err[0]
     assert ".venv/bin/hf auth login" in err[0] and "HF_TOKEN" in err[0]
-    assert server.gets == [("/facebook/sam3.1/resolve/main/sam3.1_multiplex.pt", "Bearer secret")]
+    assert server.gets == [("/facebook/sam3.1/resolve/daa63191845a41281374e725f4c9e51c7a824460/sam3.1_multiplex.pt",
+                             "Bearer secret")]
 
 
 # ------------------------------------------------------------------------ the same in every node's test_weights.py
@@ -223,6 +230,20 @@ def test_a_wrong_checksum_keeps_the_download_aside_and_says_to_remove_it(home, s
     assert not w.path.exists() and (home / "a.bin.part").read_bytes() == DATA
 
 
+def test_a_download_of_another_length_is_refused_and_kept_aside(home, server):
+    w = url_weight(home, server, sha=None)
+    w = weights.Weight(w.path, w.source, len(DATA) + 1)  # a size in code that the source no longer has
+    with pytest.raises(weights.WeightsError, match=rf"a.bin.part: {len(DATA)} bytes, expected {len(DATA) + 1}.*remove"):
+        weights.ensure([w], out=io.StringIO())
+    assert not w.path.exists() and (home / "a.bin.part").exists()
+
+
+def test_every_file_of_the_node_has_its_exact_size_and_sha256():
+    for w in default_weights():
+        assert w.size > 0 and (w.sha256 is None) == (w.path.name in WITHOUT_SHA256), w.path.name
+        assert w.sha256 is None or len(w.sha256) == 64
+
+
 def test_download_only_checks_present_files_against_their_sha256(home, no_network):
     w = weights.Weight(home / "a.bin", weights.Url("http://127.0.0.1:9/a.bin"), 1, DATA_SHA)
     place({w.path: b"x"})
@@ -291,11 +312,11 @@ from pathlib import Path
 from {weights.__name__} import Url, Weight, WeightsError, ensure, fail
 import {weights.__name__} as weights
 signal.signal(signal.SIGINT, signal.default_int_handler)  # also where a background shell ignores it
-root, url, sha = Path(sys.argv[1]), sys.argv[2], sys.argv[3]
+root, url, sha, size = Path(sys.argv[1]), sys.argv[2], sys.argv[3], int(sys.argv[4])
 weights.WEIGHTS = root
 weights.REQUIRED = ()
 try:
-    ensure([Weight(root / "a.bin", Url(url), 1, sha)])
+    ensure([Weight(root / "a.bin", Url(url), size, sha)])
 except WeightsError as error:
     sys.exit(fail(error))
 print("done", flush=True)
@@ -303,7 +324,7 @@ print("done", flush=True)
 
 
 def child(root: Path, server: Server) -> subprocess.Popen:
-    return subprocess.Popen([sys.executable, "-c", CHILD, str(root), f"{server.url}/a.bin", DATA_SHA],
+    return subprocess.Popen([sys.executable, "-c", CHILD, str(root), f"{server.url}/a.bin", DATA_SHA, str(len(DATA))],
                             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
 
