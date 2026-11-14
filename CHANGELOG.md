@@ -6,9 +6,7 @@
 SAM 3's detector from Meta's model code and is a derivative work of SAM 3. Everything else stays under the Apache
 License 2.0. The README names the terms of the SAM License that bind whoever uses the node. No change of the code.
 
-`tools/setup.sh` names these terms before it downloads SAM 3's code and checkpoint and asks whether to go on. A script
-without a terminal passes `--accept-model-terms` or sets `XBLICK_SAM3_ACCEPT_MODEL_TERMS=yes`; without either the script ends
-with an error.
+`tools/setup.sh` prints these terms before it downloads SAM 3's code and checkpoint.
 
 ## 0.2.0 (2026-11-13)
 

@@ -89,9 +89,3 @@ uv lock                                         # after a new core rev in pyproj
 | Box message wait for its frame | 0.5 s (`FRAME_WAIT_S`) |
 | Environment | `HF_TOKEN` (setup), `UV` (setup), `CUDA_MPS_PIPE_DIRECTORY` (MPS expected) |
 | Consumers | xblick-foundationpose and the mesh makers read `instances`, xblick-tapnext seeds on it, `xblick rerun --segmentation` draws it |
-
-## Model terms
-
-Before a download `tools/setup.sh` names the terms of the SAM License and asks. Without a terminal it needs
-`--accept-model-terms` or `XBLICK_SAM3_ACCEPT_MODEL_TERMS=yes`. Only the user may decide to give them: never pass
-them on your own.
