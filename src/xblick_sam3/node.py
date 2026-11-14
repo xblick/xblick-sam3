@@ -1,6 +1,6 @@
 """xblick-sam3: SAM 3.1's open-vocabulary instance segmentation (segmenter.py) on a camera's colour stream.
 
-    xblick-sam3 --camera robot/camera [--words cup bottle "tomato soup can"] \\
+    xblick-sam3 --camera test/camera [--words cup bottle "tomato soup can"] \\
                     [--boxes <camera>/boxer/detections_2d] [--history 30] \\
                     [--color <camera>/color] [--node sam3] [--threshold 0.5] [--compile max-autotune-no-cudagraphs]
                     [--resolution 672] [--local shm|cuda]
@@ -112,7 +112,7 @@ def split_words(given: list[str]) -> list[str]:
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="xblick-sam3", description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--camera", required=True, help="the camera's base, e.g. robot/camera")
+    parser.add_argument("--camera", required=True, help="the camera's base, e.g. test/camera")
     parser.add_argument("--words", nargs="*", default=[],
                         help="text prompts at the start: words, each also comma-separated, e.g. 'cup,bottle' or cup "
                              "\"soup can\" (while it runs: the parameter words, or <camera>/<node>/prompts with "

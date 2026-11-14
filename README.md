@@ -1,5 +1,7 @@
 # xblick-sam3
 
+[![xblick core](https://img.shields.io/pypi/v/xblick?label=xblick%20core&color=blue)](https://github.com/xblick/xblick)
+
 xblick-sam3 segments the objects in a camera's colour stream with Meta's
 [SAM 3.1](https://github.com/facebookresearch/sam3), an open-vocabulary instance segmentation model. You name the
 objects with words or example boxes, and the node publishes one mask per instance for every frame of a 30 Hz camera.
@@ -56,12 +58,12 @@ is set before step 2, the first call already downloads the checkpoint.
 
 ## Run
 
-Start the node on a camera. `robot/camera` is an example name. The node connects to the Zenoh router of the
+Start the node on a camera. `test/camera` is an example name. The node connects to the Zenoh router of the
 PC, which [Sessions](https://github.com/xblick/xblick/blob/main/docs/concepts/sessions.md)
 explains.
 
 ```bash
-.venv/bin/xblick-sam3 --camera robot/camera --words "cup,bottle,tomato soup can" --compile default
+.venv/bin/xblick-sam3 --camera test/camera --words "cup,bottle,tomato soup can" --compile default
 ```
 
 `--compile default` compiles the networks for about 45 s before the first frame. After that a frame takes about a
@@ -70,15 +72,15 @@ third less time.
 Look at the result in Durchblick's viewer:
 
 ```bash
-xblick rerun --spawn --detections robot/camera/sam3/detections_2d \
-    --segmentation robot/camera/sam3/instances robot/camera/color
+xblick rerun --spawn --detections test/camera/sam3/detections_2d \
+    --segmentation test/camera/sam3/instances test/camera/color
 ```
 
 Read the prompts and set new ones while the node works:
 
 ```bash
-.venv/bin/xblick-sam3-prompts --camera robot/camera
-.venv/bin/xblick-sam3-prompts --camera robot/camera --words bowl "soup can"
+.venv/bin/xblick-sam3-prompts --camera test/camera
+.venv/bin/xblick-sam3-prompts --camera test/camera --words bowl "soup can"
 ```
 
 The options that most users change:
@@ -96,7 +98,7 @@ The options that most users change:
 
 All options, the prompt format and the Python class: [docs/prompts.md](docs/prompts.md).
 
-Every option is also a parameter of the node `<camera>/<node>`, for example `robot/camera/sam3`. Durchblick's
+Every option is also a parameter of the node `<camera>/<node>`, for example `test/camera/sam3`. Durchblick's
 terminal interface (`xblick`, tab Parameters) and `xblick param` show them. Four of them change while the node
 runs: `threshold`, `match_iou`, `max_missing` and `words`. A new list of words replaces the prompts at the next frame,
 and prompts set over `<camera>/<node>/prompts` show in `words`. The other options apply at the next start, and

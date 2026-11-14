@@ -7,7 +7,7 @@ works, the `--boxes` mode, and the Python class behind the node.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `--camera` | required | The base name of the camera, for example `robot/camera`. |
+| `--camera` | required | The base name of the camera, for example `test/camera`. |
 | `--words` | none | The text prompts at the start. Separate them with spaces or commas, for example `cup "soup can"`. Live: it changes while the node runs. |
 | `--boxes TOPIC` | off | Segment the boxes of this `Detection2DArray` topic, one mask per box. |
 | `--history` | 30 | The number of colour frames that the node keeps. Box messages and exemplar boxes refer to them by stamp. |
@@ -82,9 +82,9 @@ Rules:
 `xblick-sam3-prompts` sends these queries.
 
 ```bash
-.venv/bin/xblick-sam3-prompts --camera robot/camera                          # show the prompts
-.venv/bin/xblick-sam3-prompts --camera robot/camera --words bowl "soup can"  # set words
-.venv/bin/xblick-sam3-prompts --camera robot/camera --json '{"prompts": ["cup"]}'
+.venv/bin/xblick-sam3-prompts --camera test/camera                          # show the prompts
+.venv/bin/xblick-sam3-prompts --camera test/camera --words bowl "soup can"  # set words
+.venv/bin/xblick-sam3-prompts --camera test/camera --json '{"prompts": ["cup"]}'
 ```
 
 | Option | Default | Meaning |
@@ -155,7 +155,7 @@ The class uses SAM 3's resolution of 1008 unless you pass `resolution=672`. The 
 
 ## Parameters
 
-Every option is also a parameter of the node `<camera>/<node>`, for example `robot/camera/sam3`. The live ones
+Every option is also a parameter of the node `<camera>/<node>`, for example `test/camera/sam3`. The live ones
 change while the node runs: `threshold`, `match_iou`, `max_missing`, `words`; the tables mark them. The others are
 read-only and apply at the next start, where `--param NAME:=VALUE` or `--params-file FILE` set them. New words replace
 the prompts at the next frame, and prompts set over `<camera>/<node>/prompts` show in `words`. Durchblick's terminal

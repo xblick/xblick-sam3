@@ -1,9 +1,9 @@
 """xblick-sam3-prompts: shows or sets a running xblick-sam3's prompts over its queryable
 ``<camera>/<node>/prompts``.
 
-    xblick-sam3-prompts --camera robot/camera                       # the prompts now
-    xblick-sam3-prompts --camera robot/camera --words cup "soup can"
-    xblick-sam3-prompts --camera robot/camera --json '{"prompts": [...], "stamp": ...}'
+    xblick-sam3-prompts --camera test/camera                       # the prompts now
+    xblick-sam3-prompts --camera test/camera --words cup "soup can"
+    xblick-sam3-prompts --camera test/camera --json '{"prompts": [...], "stamp": ...}'
                             [--node sam3] [--timeout 10] [--connect ...] [--listen ...] [--config FILE]
 
 The queryable answers a query without payload with the prompts (JSON); one with a JSON payload replaces them all and
@@ -83,7 +83,7 @@ def main(argv=None) -> int:
 
     parser = argparse.ArgumentParser(prog="xblick-sam3-prompts", description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--camera", required=True, help="the camera's base, e.g. robot/camera")
+    parser.add_argument("--camera", required=True, help="the camera's base, e.g. test/camera")
     parser.add_argument("--node", default="sam3", help="the node's part of the topic: <camera>/<node>/prompts")
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--words", nargs="+", help="set these words as the prompts (each also comma-separated)")

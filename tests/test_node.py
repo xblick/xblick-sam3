@@ -23,7 +23,7 @@ from xblick_sam3.node import boxes_of, to_message
 from xblick_sam3.prompts import describe, parse
 from xblick_sam3.segmenter import Prompt, Segmentation
 
-CAM = "robot/camera"
+CAM = "test/camera"
 WORDS = ["chair", "cup", "book"]
 
 

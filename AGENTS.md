@@ -15,7 +15,7 @@ tools/setup.sh                                  # .venv as uv.lock fixes it + SA
 .venv/bin/ruff check src tests                  # lint, 120 columns (pyproject)
 .venv/bin/python tools/bench.py IMAGES_DIR --words cup bottle --compile default --resolution 672   # speed tables
 uv lock                                         # after a new core rev in pyproject (pin xblick>=0.5.0,<0.6)
-.venv/bin/xblick-sam3 --camera robot/camera --words "cup,bottle" --compile default   # needs zenohd on 7447
+.venv/bin/xblick-sam3 --camera test/camera --words "cup,bottle" --compile default   # needs zenohd on 7447
 ```
 
 - Checkpoint is gated: Hugging Face account with access to `facebook/sam3.1`, logged in once
