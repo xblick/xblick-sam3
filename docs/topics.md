@@ -66,7 +66,9 @@ rate in effect and the number of frames that `--max-hz` left out.
 ### `<camera>/sam3/prompts`
 
 This is a Zenoh queryable that answers in JSON. A query without a payload returns the prompts. A query with a
-payload sets them. [docs/prompts.md](prompts.md) describes the format.
+payload sets them. [docs/prompts.md](prompts.md) describes the format. The node answers at once, also while the
+model works on a frame. It checks new prompts and answers with them, and the node segments them from the next frame
+on. The queryable exists once the model is loaded.
 
 ## Ids
 

@@ -206,6 +206,25 @@ class BoxHead(torch.nn.Module):
         return low[:, 0], iou[:, 0], objects[:, 0]
 
 
+def check_prompts(prompts: list[Prompt | str], size: tuple[int, int] | None) -> list[Prompt]:
+    """``prompts`` as Prompts (strings: words), checked without the model: ValueError for names given twice, and for
+    exemplar boxes without the frame they are in (``size``, its (height, width): None without one) or outside it."""
+    prompts = [p if isinstance(p, Prompt) else Prompt(text=p) for p in prompts]
+    names = [p.name for p in prompts]
+    if len(set(names)) != len(names):
+        raise ValueError(f"prompts named twice: {names}")
+    exemplars = [i for i, p in enumerate(prompts) if p.exemplars]
+    if exemplars and size is None:
+        raise ValueError(f"exemplar boxes ({', '.join(names[i] for i in exemplars)}) need the frame they are in")
+    if exemplars:
+        h, w = size
+        for i in exemplars:
+            for box in (*prompts[i].boxes, *prompts[i].negative):
+                if min(box[0], box[1]) < 0 or box[2] > w or box[3] > h:
+                    raise ValueError(f"prompt {names[i]!r}: box {box} not inside the frame ({w} x {h})")
+    return prompts
+
+
 class Segmenter:
     """Instance masks of ``prompts`` (``Prompt``s, or words) in RGB frames (``segment``), each instance scored; those of
     at least ``threshold`` are kept. ``set_prompts`` changes them. ``dtype``: the precision the networks run in
@@ -266,19 +285,10 @@ class Segmenter:
         from sam3.model.data_misc import FindStage  # noqa: PLC0415
         from sam3.model.geometry_encoders import Prompt as Geometry  # noqa: PLC0415
 
-        prompts = [p if isinstance(p, Prompt) else Prompt(text=p) for p in prompts]
-        names = [p.name for p in prompts]
-        if len(set(names)) != len(names):
-            raise ValueError(f"prompts named twice: {names}")
+        prompts = check_prompts(prompts, None if image is None else tuple(image.shape[:2]))
         exemplars = [i for i, p in enumerate(prompts) if p.exemplars]
-        if exemplars and image is None:
-            raise ValueError(f"exemplar boxes ({', '.join(names[i] for i in exemplars)}) need the frame they are in")
         if exemplars:
             h, w = image.shape[:2]
-            for i in exemplars:
-                for box in (*prompts[i].boxes, *prompts[i].negative):
-                    if min(box[0], box[1]) < 0 or box[2] > w or box[3] > h:
-                        raise ValueError(f"prompt {names[i]!r}: box {box} not inside the frame ({w} x {h})")
         n, d = len(prompts), self.device
         self.prompts = prompts
         if not n:

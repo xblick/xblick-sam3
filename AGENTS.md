@@ -37,6 +37,10 @@ uv lock                                         # after a new core rev in pyproj
   read: the store prints the command that moves it. The core's `docs/reference/files.md` has the rule.
 - Fail fast, no silent fallbacks. Refused prompts answer with an error and leave the prompts unchanged. With
   `CUDA_MPS_PIPE_DIRECTORY` set, the node stops at start when no MPS daemon answers. Keep it so.
+- The queryable answers in Zenoh's thread at once: `answer` checks a request without the model
+  (`segmenter.check_prompts`) and accepts it, and the loop sets it (`apply_prompts`) before the next frame. Never
+  answer from the frame loop: a query still open at the caller's timeout gets a `Timeout` reply, which a sender takes
+  for a second node. `tests/slow_step.py` slows the model for the test of it.
 - Weights: `weights.py` is the one place (`CHECKPOINT`, its repository, SHA-256, size, `TERMS`; `segmenter.py`
   imports `CHECKPOINT`). `weights.STORE.ensure` runs at the start before the model loads; `--download-only` runs it
   alone. File there: no network, no file written (`test_weights.py` checks it). Keep it so.

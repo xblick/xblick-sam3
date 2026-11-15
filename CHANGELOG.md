@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.2.5 (2026-11-15)
+
+The prompts queryable answers at once, and a fixed GPU.
+
+### Changed
+
+- `--device cuda` is GPU 0, `cuda:N` GPU N. Another value, or a GPU that cannot be used, ends the node with one line.
+- The start line says where the model computes (`model on cuda:0`).
+- README: how to cite SAM 3.
+
+### Fixed
+
+- The queryable `prompts` answers at once, also while the model works on a frame. New prompts are checked, answered and
+  segmented from the next frame on.
+- `xblick-sam3-prompts` no longer waits past its timeout when Zenoh does not end a query.
+
+Compatible with earlier clients: nothing on the wire changed.
+
 ## 0.2.4 (2026-11-14)
 
 - The weights moved out of the checkout into the node's cache directory, `~/.cache/xblick/sam3/`. `XBLICK_HOME` and

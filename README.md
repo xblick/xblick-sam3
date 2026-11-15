@@ -154,7 +154,7 @@ The measurements, the method and what did not help: [docs/performance.md](docs/p
 
 ## Limits
 
-- Version 0.2.4. We tested the node on recorded frames and on the replayed head camera of a simulation, beside the
+- Version 0.2.5. We tested the node on recorded frames and on the replayed head camera of a simulation, beside the
   other Durchblick nodes. We have not tested it on a robot.
 - We tested prompts over Zenoh and `--boxes` on recorded frames and in the tests. We have not tested `--boxes` live
   on Boxer's boxes.
@@ -198,3 +198,20 @@ Whoever runs the node uses both and is bound by the SAM License. Among its terms
 `tests/data/office.png` is a frame of the sequence `freiburg3_long_office_household` of the TUM RGB-D dataset of the
 Technical University of Munich. It is under the
 [Creative Commons Attribution 4.0 International licence](https://creativecommons.org/licenses/by/4.0/) (CC BY 4.0).
+
+## Citation
+
+This node uses SAM 3.1 (facebookresearch/sam3). If you use it in research, cite their work. The entries below are copied
+from [its README](https://github.com/facebookresearch/sam3/blob/f1647e8d0c1d280991f4d1b7d974c2704537fe66/README.md):
+
+```bibtex
+@misc{carion2025sam3segmentconcepts,
+      title={SAM 3: Segment Anything with Concepts},
+      author={Nicolas Carion and Laura Gustafson and Yuan-Ting Hu and Shoubhik Debnath and Ronghang Hu and Didac Suris and Chaitanya Ryali and Kalyan Vasudev Alwala and Haitham Khedr and Andrew Huang and Jie Lei and Tengyu Ma and Baishan Guo and Arpit Kalla and Markus Marks and Joseph Greer and Meng Wang and Peize Sun and Roman Rädle and Triantafyllos Afouras and Effrosyni Mavroudi and Katherine Xu and Tsung-Han Wu and Yu Zhou and Liliane Momeni and Rishi Hazra and Shuangrui Ding and Sagar Vaze and Francois Porcher and Feng Li and Siyuan Li and Aishwarya Kamath and Ho Kei Cheng and Piotr Dollár and Nikhila Ravi and Kate Saenko and Pengchuan Zhang and Christoph Feichtenhofer},
+      year={2025},
+      eprint={2511.16719},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV},
+      url={https://arxiv.org/abs/2511.16719},
+}
+```

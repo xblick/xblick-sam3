@@ -19,7 +19,7 @@ each prompt, it publishes the instances in the newest colour frame whose score i
 flowchart LR
   C["<camera>/color"] --> H["History: the last 30 frames"]
   B["Box topic (--boxes)"] -. "stamp" .-> H
-  Q["Queryable: prompts"] -. "between frames" .-> S
+  Q["Queryable: prompts"] -. "answered at once, set before the next frame" .-> S
   H --> S["Segmenter: SAM 3.1 detector, box head"]
   S --> T["Id tracker: mask overlap"]
   T --> D["detections_2d"]

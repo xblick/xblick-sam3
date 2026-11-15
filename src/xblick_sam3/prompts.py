@@ -79,7 +79,7 @@ def describe(prompts: list[Prompt], stamp: int | None) -> dict:
 
 def main(argv=None) -> int:
     from xblick import topics  # noqa: PLC0415
-    from xblick.session import add_arguments, open_from_args  # noqa: PLC0415
+    from xblick.session import add_arguments, open_from_args, replies  # noqa: PLC0415
 
     parser = argparse.ArgumentParser(prog="xblick-sam3-prompts", description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -89,7 +89,7 @@ def main(argv=None) -> int:
     group.add_argument("--words", nargs="+", help="set these words as the prompts (each also comma-separated)")
     group.add_argument("--json", help="set the prompts of this request (above)")
     parser.add_argument("--timeout", type=float, default=10.0,
-                        help="seconds to wait for the answer (the node answers between frames)")
+                        help="seconds to wait for the answer (the node answers at once)")
     add_arguments(parser)
     args = parser.parse_args(argv)
     key = f"{topics.check_name(args.camera)}/{args.node}/{PROMPTS}"
@@ -103,18 +103,19 @@ def main(argv=None) -> int:
     try:
         # right after the session opens a query reaches no queryable yet (Durchblick's find_streams: their declarations
         # arrive some 0.1-0.3 s later): asked again until an answer comes or the timeout ends
-        replies, end = [], time.monotonic() + args.timeout
-        while not replies and (remaining := end - time.monotonic()) > 0:
-            replies = list(session.get(key, payload=payload, timeout=remaining))
-            if not replies:
+        # replies(): Zenoh does not always end a query at its timeout (the core's AGENTS.md, "Traps")
+        got, end = [], time.monotonic() + args.timeout
+        while not got and (remaining := end - time.monotonic()) > 0:
+            got = replies(session, key, remaining, payload=payload)
+            if not got:
                 time.sleep(min(ASK_AGAIN_S, max(0.0, end - time.monotonic())))
     finally:
         session.close()
-    if not replies:
+    if not got:
         print(f"xblick-sam3-prompts: no answer on {key} within {args.timeout} s", file=sys.stderr)
         return 1
     failed = False
-    for reply in replies:
+    for reply in got:
         if reply.ok is not None:
             print(reply.ok.payload.to_string())
         else:

@@ -328,3 +328,77 @@ def test_node_segments_given_boxes_and_takes_prompts_over_its_queryable():
         publisher.close()
         session.close()
     assert process.returncode == 0, "".join(output)
+
+
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="needs a CUDA device")
+def test_prompts_are_answered_at_once_while_the_model_works():
+    """While SAM 3.1 takes 4 s for a frame (tests/slow_step.py), the queryable answers within 0.5 s and nothing else
+    (no "Timeout" reply: the query is not kept open), and the prompts it accepted are segmented after the step."""
+    import cv2  # noqa: PLC0415
+    from xblick.session import replies, timed_out  # noqa: PLC0415
+
+    bgr = cv2.imread(str(Path(__file__).parent / "data" / "office.png"))
+    h, w = bgr.shape[:2]
+    port = free_port()
+    session = open_session(listen=[f"127.0.0.1:{port}"])
+    info = db.CameraInfo.pinhole(w, h, 525.0, 525.0, w / 2 - 0.5, h / 2 - 0.5, frame_id="azurekinect")
+    publisher = db.CameraPublisher(session, f"{CAM}/color", encoding="bgr8", frame_id="azurekinect", camera_info=info,
+                                   source="test")
+    detections, lock = {}, threading.Lock()
+
+    def on_detections(message):
+        with lock:
+            detections[message.header.stamp.to_ns()] = message
+
+    det_sub = db.DetectionSubscriber(session, topics.detections(CAM, "sam3", "detections_2d"), on_detections)
+    command = [sys.executable, str(Path(__file__).parent / "slow_step.py"), "4.0", "--camera", CAM, "--words",
+               ",".join(WORDS), "--connect", f"127.0.0.1:{port}"]
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    output: list[str] = []
+    threading.Thread(target=lambda: output.extend(process.stdout), daemon=True).start()
+    stop = threading.Event()
+
+    def publish():
+        stamp = 1_000_000_000
+        while not stop.is_set():
+            publisher.publish(bgr, stamp_ns=stamp)
+            stamp += 100_000_000
+            time.sleep(0.1)
+
+    threading.Thread(target=publish, daemon=True).start()
+
+    def ask(payload=None):
+        began = time.monotonic()
+        got = replies(session, f"{CAM}/sam3/prompts", 3.0, **({"payload": payload} if payload else {}))
+        took = time.monotonic() - began
+        assert not any(r.err is not None and timed_out(r) for r in got), "".join(output)
+        assert len(got) == 1 and got[0].ok is not None, ([r.err.payload.to_string() for r in got if r.err], output)
+        return json.loads(got[0].ok.payload.to_string()), took
+
+    try:
+        deadline = time.monotonic() + 180.0
+        while not any("slow step" in line for line in output):
+            assert process.poll() is None and time.monotonic() < deadline, "".join(output)
+            time.sleep(0.05)
+        began = time.monotonic()
+        answers = [ask(), ask(json.dumps({"prompts": ["chair"]})), ask()]
+        assert time.monotonic() - began < 3.0, "the queries outlasted the step: no check"
+        assert all(took < 0.5 for _, took in answers), [took for _, took in answers]
+        chair = {"prompts": ["chair"], "stamp": None}
+        assert [a for a, _ in answers] == [{"prompts": WORDS, "stamp": None}, chair, chair]
+        found = set()
+        while found != {"chair"} and time.monotonic() < deadline:  # after the step: the new prompts
+            time.sleep(0.2)
+            det_sub.check()
+            with lock:
+                newest = detections[max(detections)] if detections else None
+            found = {d.results[0].hypothesis.class_id for d in newest.detections} if newest else set()
+        assert found == {"chair"}, ("".join(output), found)
+    finally:
+        stop.set()
+        process.send_signal(signal.SIGTERM)
+        process.wait(timeout=30)
+        det_sub.close()
+        publisher.close()
+        session.close()
+    assert process.returncode == 0, "".join(output)

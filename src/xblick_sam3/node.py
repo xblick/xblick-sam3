@@ -10,7 +10,8 @@ What it segments:
 
 * prompts: words (--words), example boxes (exemplars: every instance like the boxed one) or both, set at the start
   (--words) and at any time over the queryable ``<camera>/<node>/prompts`` (prompts.py, ``xblick-sam3-prompts``),
-  which also answers with the prompts now
+  which also answers with the prompts now; it answers at once, also while the model works: new prompts are checked,
+  answered, and segmented from the next frame on
 * with --boxes, the boxes of a vision_msgs/Detection2DArray topic, e.g. Boxer's: one mask per box, that box's object
   (SAM's interactive head); each box message's frame (the colour frame of its stamp, one of the last --history) is
   segmented, prompts too: the node then runs at the pace of the boxes
@@ -58,6 +59,15 @@ from . import weights
 from .prompts import PROMPTS, describe, parse
 
 FRAME_WAIT_S = 0.5  # how long a box message waits for its frame (newer than the newest received) before it is dropped
+
+
+def parse_device(text: str) -> str:
+    """``--device``: cuda (GPU 0) or cuda:N, as ``cuda:N``."""
+    if text == "cuda":
+        return "cuda:0"
+    if text.startswith("cuda:") and text[5:].isdigit():
+        return text
+    raise argparse.ArgumentTypeError(f"{text!r}: cuda (GPU 0) or cuda:N")
 
 
 def to_message(result, ids: list[int], words: list[str], header: db.Header) -> db.Detection2DArray:
@@ -146,7 +156,8 @@ def main(argv=None) -> int:
     parser.add_argument("--checkpoint", default=None,
                         help="SAM 3.1's checkpoint (default: sam3.1_multiplex.pt in the node's cache directory, "
                              "~/.cache/xblick/sam3 or --weights-dir, downloaded at the first start)")
-    parser.add_argument("--device", default="cuda")
+    parser.add_argument("--device", type=parse_device, default="cuda:0",
+                        help="the GPU: cuda (GPU 0) or cuda:N; a GPU that cannot be used is an error (default: cuda:0)")
     xblick_weights.add_arguments(parser)  # --download-only (a mode of the command line), --no-download
     add_arguments(parser)  # --connect, --listen, --config; default: the PC's Zenoh router
     # --max-hz: at most 30 frames/s by default (0 or none: every frame)
@@ -183,11 +194,18 @@ def main(argv=None) -> int:
 
     import torch  # noqa: PLC0415 - with the model, after the arguments are checked
 
-    from .segmenter import Segmenter  # noqa: PLC0415 - loads sam3
+    from .segmenter import Segmenter, check_prompts  # noqa: PLC0415 - loads sam3
     from .tracking import Tracker  # noqa: PLC0415
 
     device = torch.device(args.device)
-    cuda_index = device.index if device.index is not None else 0
+    if device.index >= torch.cuda.device_count():  # no CUDA, or not that many GPUs: one line, never another device
+        print(f"xblick-sam3: --device {args.device}: no such GPU ({torch.cuda.device_count()} visible)",
+              file=sys.stderr, flush=True)
+        params.close()
+        session.close()
+        return 1
+    torch.cuda.set_device(device)
+    cuda_index = device.index
     segmenter = Segmenter(words, threshold=args.threshold, device=device, compile=args.compile,
                           resolution=args.resolution, box_head=args.boxes is not None,
                           checkpoint=args.checkpoint or store.file(weights.needed()[0]))
@@ -200,7 +218,6 @@ def main(argv=None) -> int:
     box_topic = topics.check_name(args.boxes) if args.boxes else None
     boxes_in = LatestBoxes(session, box_topic, wake) if box_topic else None
     prompts_key = f"{camera}/{args.node}/{PROMPTS}"
-    queryable = session.declare_queryable(prompts_key)  # answered between frames, in this thread
     detections_pub = db.DetectionPublisher(session, topics.detections(camera, args.node, "detections_2d"),
                                            db.Detection2DArray)
     instances_pub = None  # with the first frame's camera_info: the colour camera's
@@ -208,32 +225,47 @@ def main(argv=None) -> int:
     report = node.Reporter(session, camera, args.node, "xblick-sam3", max_hz=args.max_hz)
     report.watch(color)
     print(f"xblick-sam3: {color_base}" + (f" + {box_topic}" if box_topic else "")
-          + f" -> {camera}/{args.node}/{{detections_2d,instances}}, prompts {segmenter.words} ({prompts_key})",
-          flush=True)
+          + f" -> {camera}/{args.node}/{{detections_2d,instances}}, prompts {segmenter.words} ({prompts_key}); "
+          f"model on {args.device}", flush=True)
     counts = report.counts
+    prompt_lock = threading.Lock()  # accepted, changes: the queryable's thread and the loop
+    accepted = [segmenter.prompts, None]  # the prompts from the next frame on and the stamp of their boxes' frame
+    changes = []  # (prompts, the frame of their boxes or None), accepted on the queryable, for the loop
 
     def answer(query):
-        """Sets the prompts of a query's payload (if any) and answers with the prompts; errors leave them as they
-        were."""
-        nonlocal prompts_stamp
+        """Answers at once, in Zenoh's thread: a payload's prompts checked (without the model) and accepted, the loop
+        sets them before the next frame; the answer is the prompts from then on. Errors leave them as they were."""
         try:
             payload = query.payload.to_string() if query.payload is not None else ""
-            if payload.strip():
-                prompts, stamp = parse(json.loads(payload))
-                frame = None
-                if any(p.exemplars for p in prompts):
-                    frame = (history.newest() or (None, None))[1] if stamp is None else history.at(stamp)
-                    if frame is None:
-                        raise ValueError(f"no colour frame {'yet' if stamp is None else f'of stamp {stamp}'} (the "
-                                         f"node keeps its last {args.history})")
-                segmenter.set_prompts(prompts, tensors.rgb(frame, device) if frame is not None else None)
-                prompts_stamp = frame.header.stamp.to_ns() if frame is not None else None
-                applied_words[0] = segmenter.words  # the parameter follows: it shows the prompts' names
-                params.set("words", segmenter.words)
-                print(f"xblick-sam3: prompts {segmenter.words}", flush=True)
-            query.reply(prompts_key, json.dumps(describe(segmenter.prompts, prompts_stamp)))
+            with prompt_lock:
+                if payload.strip():
+                    prompts, stamp = parse(json.loads(payload))
+                    frame = None
+                    if any(p.exemplars for p in prompts):
+                        frame = (history.newest() or (None, None))[1] if stamp is None else history.at(stamp)
+                        if frame is None:
+                            raise ValueError(f"no colour frame {'yet' if stamp is None else f'of stamp {stamp}'} "
+                                             f"(the node keeps its last {args.history})")
+                    prompts = check_prompts(prompts, tuple(frame.image.shape[:2]) if frame is not None else None)
+                    accepted[:] = [prompts, frame.header.stamp.to_ns() if frame is not None else None]
+                    changes.append((prompts, frame))
+                reply = json.dumps(describe(*accepted))
+            query.reply(prompts_key, reply)
         except (ValueError, TypeError, json.JSONDecodeError) as error:
             query.reply_err(f"{type(error).__name__}: {error}")
+
+    def apply_prompts():
+        """The prompts accepted on the queryable, set in this thread (between frames); the parameter follows."""
+        nonlocal prompts_stamp
+        with prompt_lock:
+            taken = list(changes)
+            changes.clear()
+        for prompts, frame in taken:
+            segmenter.set_prompts(prompts, tensors.rgb(frame, device) if frame is not None else None)
+            prompts_stamp = frame.header.stamp.to_ns() if frame is not None else None
+            applied_words[0] = segmenter.words  # the parameter follows: it shows the prompts' names
+            params.set("words", segmenter.words)
+            print(f"xblick-sam3: prompts {segmenter.words}", flush=True)
 
     def process(frame, box_message):
         nonlocal instances_pub, instances_key, tracker
@@ -288,17 +320,19 @@ def main(argv=None) -> int:
         if wanted != applied_words[0]:
             applied_words[0] = wanted
             segmenter.set_prompts(wanted)
+            with prompt_lock:
+                accepted[:] = [segmenter.prompts, None]
             print(f"xblick-sam3: prompts {segmenter.words} (parameter words)", flush=True)
 
     applied_words = [words]
+    queryable = session.declare_queryable(prompts_key, answer)  # answered at once, in Zenoh's thread
     pending, pending_since, last_stamp = None, 0.0, None
     try:
         while True:
             wake.wait(0.05)
             wake.clear()
             history.check()
-            while (query := queryable.try_recv()) is not None:
-                answer(query)
+            apply_prompts()
             apply_parameters()
             frame = (history.newest() or (None, None))[1]
             if frame is not None:

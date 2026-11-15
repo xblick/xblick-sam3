@@ -19,7 +19,7 @@ works, the `--boxes` mode, and the Python class behind the node.
 | `--compile MODE` | off | Compile the networks with `torch.compile` in this mode before the first frame. |
 | `--resolution` | 672 | The size to which the node scales a frame. It must be a multiple of 336. |
 | `--checkpoint` | `~/.cache/xblick/sam3/sam3.1_multiplex.pt` | The SAM 3.1 checkpoint. |
-| `--device` | `cuda` | The GPU of the node. |
+| `--device` | `cuda` | The GPU of the node: `cuda` is GPU 0, `cuda:N` is GPU N. A GPU that cannot be used ends the node with one line. |
 | `--no-download` | off | End at once when the checkpoint is missing, and name it. The node downloads nothing. |
 | `--download-only` | off | Download the missing checkpoint, check its SHA-256 and end. The node needs no camera, Zenoh router or GPU for it, and `--camera` may be left out. |
 | `--weights-dir DIR` | the cache directory | The directory of the weights, in place of the node's cache directory `~/.cache/xblick/sam3/`. A start option, read-only as a parameter. |
