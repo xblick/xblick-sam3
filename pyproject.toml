@@ -8,7 +8,8 @@ license-files = ["LICENSE", "NOTICE", "LICENSES/SAM-License.txt"]
 authors = [{ name = "David Schneider" }]
 requires-python = ">=3.12,<3.13"
 dependencies = [
-    "xblick>=0.5.5,<0.6",  # the Durchblick core: node, history, tensors, mps, parameters, vision_msgs
+    # branch ros2 only: the core from its unreleased branch ros2 (--ros); main pins the release
+    "xblick @ git+https://github.com/xblick/xblick@ros2",  # the core: node, history, tensors, mps, parameters
     # SAM 3 / 3.1's model code (facebookresearch/sam3, SAM License); uv.lock fixes the commit
     "sam3",
     "torch>=2.7",

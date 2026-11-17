@@ -152,6 +152,33 @@ mask, Boxer and nvblox it keeps up with a 30 Hz camera.
 
 The measurements, the method and what did not help: [docs/performance.md](docs/performance.md).
 
+## ROS 2
+
+The branch `ros2` of this repository takes the core from its branch `ros2`, which is not released. `uv sync` then builds
+the core's C++ part from source, which needs a C++ compiler. The core adds the option `--ros`: the node then also takes
+part in ROS 2 on `rmw_zenoh`, and its own topics stay as they are. Without `--ros` nothing changes.
+
+```bash
+.venv/bin/xblick-sam3 --camera test/camera --words cup --ros
+```
+
+| ROS 2 topic | ROS type |
+| --- | --- |
+| `/<camera>/sam3/detections_2d` | `vision_msgs/msg/Detection2DArray` |
+| `/<camera>/sam3/instances/image_raw`, `.../camera_info`, `.../image_raw/compressed` | `sensor_msgs/msg/Image` (`mono16`), `CameraInfo`, `CompressedImage` (PNG) |
+| `/<camera>/diagnostics` | `diagnostic_msgs/msg/DiagnosticArray` |
+
+ROS 2 does not get the prompts queryable (JSON, no ROS service) and the instances' rings. The node sends a topic to ROS
+only while a ROS subscriber reads it. The program is the ROS node `/xblick_sam3` (`--ros-node`), and its parameters are
+the ROS node `/<camera>/sam3`. ROS clients read the parameters and may set them only when the node was started with
+`--ros-params-writable`.
+
+Each part of `--camera` and `--node` has to be a ROS name: letters, digits and `_`, not starting with a digit. Otherwise
+`--ros` stops the node at its start with one line. A test checks the detections and the instances of a stand-in model
+against our own ROS subscriber; no ROS 2 installation and no real model were used for this node. [Durchblick and ROS
+2](https://github.com/xblick/xblick/blob/ros2/docs/integrations/ros2.md) describes the option, the other `--ros-*`
+options and ROS 2's tools.
+
 ## Limits
 
 - Version 0.2.5. We tested the node on recorded frames and on the replayed head camera of a simulation, beside the
