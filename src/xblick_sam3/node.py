@@ -58,6 +58,7 @@ from xblick.session import add_arguments, open_from_args
 from . import weights
 from .prompts import PROMPTS, describe, parse
 
+MOTIONS = ("masks", "none")  # --motion: tracking.MOTIONS (tracking.py imports torch, the node after its arguments)
 FRAME_WAIT_S = 0.5  # how long a box message waits for its frame (newer than the newest received) before it is dropped
 
 
@@ -118,6 +119,8 @@ class LatestBoxes:
 LIVE = {"threshold": {"range": (0.0, 1.0, 0.01)},
         "match_iou": {"range": (0.01, 1.0, 0.01)},
         "max_missing": {"range": (0, 300, 1), "unit": "frames"},
+        "match_distance": {"range": (0.0, 5.0, 0.05), "unit": "object sizes"},
+        "match_size": {"range": (1.0, 10.0, 0.1)},
         "words": {}}
 
 
@@ -145,8 +148,19 @@ def main(argv=None) -> int:
     parser.add_argument("--match-iou", type=float, default=0.3,
                         help="the least overlap (intersection over union) of an instance's mask with an object's last "
                              "one for it to keep that object's id")
-    parser.add_argument("--max-missing", type=int, default=15,
-                        help="frames an object may go unseen and keep its id")
+    parser.add_argument("--max-missing", type=int, default=30,
+                        help="frames an object may go unseen and keep its id (it takes an instance where it is "
+                             "expected: its mask moved with the image)")
+    parser.add_argument("--match-distance", type=float, default=0.5,
+                        help="an instance with too little overlap still keeps an object's id when its centre is at "
+                             "most this many object sizes (square root of the area) from where the object is expected "
+                             "and --match-size allows; 0: overlap only")
+    parser.add_argument("--match-size", type=float, default=2.0,
+                        help="the most an instance's area and its object's may differ (a ratio) to match by position")
+    parser.add_argument("--motion", choices=MOTIONS, default="masks",
+                        help="the image's motion (camera pans, tilts, drives, zooms) before the matching: masks "
+                             "(estimated from the masks: one shift and scale, needs two objects seen in both frames) "
+                             "or none")
     parser.add_argument("--compile", default=None, metavar="MODE",
                         help="torch.compile the networks in this mode (e.g. max-autotune-no-cudagraphs; README, "
                              "\"Speed\"); compiles before the first frame, minutes")
@@ -178,6 +192,8 @@ def main(argv=None) -> int:
     params.check_overrides()
     if args.history < 1:
         parser.error("--history: at least 1")
+    if args.max_missing < 0 or args.match_distance < 0 or args.match_size < 1:
+        parser.error("--max-missing, --match-distance: not negative; --match-size: at least 1")
     words = split_words(args.words)
     color_base = args.color or f"{camera}/color"
 
@@ -210,7 +226,11 @@ def main(argv=None) -> int:
                           resolution=args.resolution, box_head=args.boxes is not None,
                           checkpoint=args.checkpoint or store.file(weights.needed()[0]))
     prompts_stamp = None  # the frame the prompts' boxes are in
-    tracker = Tracker(min_iou=args.match_iou, max_missing=args.max_missing)
+    def new_tracker():
+        return Tracker(min_iou=args.match_iou, max_missing=args.max_missing, max_distance=args.match_distance,
+                       max_size_ratio=args.match_size, motion=args.motion)
+
+    tracker = new_tracker()
     wake = threading.Event()
     color = db.ImageSubscriber(session, color_base, transport="auto", camera_info=True, local=args.local,
                                max_hz=args.max_hz, device=device)
@@ -278,7 +298,7 @@ def main(argv=None) -> int:
         if instances_pub is not None and key != instances_key:  # the camera came back with another size or frame
             print(f"xblick-sam3: {color_base} is now {info.width} x {info.height} in {frame_id}: the tracks start "
                   "anew (new ids)", flush=True)
-            tracker = Tracker(min_iou=args.match_iou, max_missing=args.max_missing)
+            tracker = new_tracker()
             instances_pub.camera_info, instances_pub.frame_id = info, frame_id
         instances_key = key
         if instances_pub is None:
@@ -298,7 +318,11 @@ def main(argv=None) -> int:
         box_labels = [("box", d.results[0].hypothesis.class_id if d.results else "") for d in kept]
         masks = torch.cat([result.box_masks[result.box_found], result.masks]) if given is not None else result.masks
         names = segmenter.words
+        issued = tracker.issued
         ids = tracker.update(box_labels + [("prompt", names[i]) for i in result.label.tolist()], masks)
+        counts["new_ids"] += tracker.issued - issued
+        counts["objects"] += len(tracker.tracks)
+        counts["moved"] += tracker.last_motion[2] > 0
         # ordered on this thread's stream after the masks: publish copies it once it is complete
         instances = Tracker.instances_image(ids, masks)
         instances_pub.publish(instances, stamp_ns=frame.header.stamp.to_ns(), stream=torch.cuda.current_stream(device))
@@ -316,6 +340,9 @@ def main(argv=None) -> int:
         words as the prompts (exemplar prompts set on the prompts key give way to them)."""
         segmenter.threshold = params["threshold"]
         tracker.min_iou, tracker.max_missing = params["match_iou"], params["max_missing"]
+        tracker.max_distance, tracker.max_size_ratio = params["match_distance"], params["match_size"]
+        args.match_iou, args.max_missing = params["match_iou"], params["max_missing"]  # a new tracker takes them too
+        args.match_distance, args.match_size = params["match_distance"], params["match_size"]
         wanted = split_words(params["words"])
         if wanted != applied_words[0]:
             applied_words[0] = wanted
@@ -367,9 +394,11 @@ def main(argv=None) -> int:
                 level, message = node.state(f"{d['frames'] / seconds:.2f} frames/s", problems, waiting)
                 report.publish(level, message,
                                {"frames/s": d["frames"] / seconds, "instances/frame": d["instances"] / n,
+                                "new ids": d["new_ids"], "objects kept/frame": d["objects"] / n,
+                                "frames with a motion estimate": d["moved"],
                                 "boxes/frame": d["boxes"] / n, "ms/frame": ms, "no camera_info": d["no_info"],
                                 "boxes without their frame": d["no_frame"], "prompts": ", ".join(segmenter.words)},
-                               log_extra=f", {ms:.0f} ms a frame")
+                               log_extra=f", {ms:.0f} ms a frame, {d['new_ids']} new ids")
     except KeyboardInterrupt:
         pass
     finally:
