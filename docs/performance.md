@@ -243,7 +243,6 @@ copy splits the compiled graphs and costs 8 ms. The segmenter therefore keeps SA
 - We did not try to fuse all words into one prompt. It would need one grounding pass for all words. It also asks
   the model a different question, and we do not know the quality of the answer.
 - We did not measure accuracy against ground truth at any resolution.
-- We have not recorded the VRAM that the node needs.
 - We measured the node without MPS only at 1008.
 - SAM 3.1's own video tracker is slower than the node's detector with its id matching.
   [docs/design.md](design.md#why-the-node-does-not-use-sam-31s-tracker) has the numbers.
