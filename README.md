@@ -30,7 +30,7 @@ Details: [docs/topics.md](docs/topics.md).
 
 - An NVIDIA GPU with CUDA. We measured on an RTX PRO 6000 Blackwell. Alone on that GPU the node held 4.7 GiB of
   VRAM (four words, `--compile default`, 1280 x 720 at 30 frames per second, 2026-11-02).
-- Durchblick 0.5 or newer, below 0.6 (Python package `xblick`). The setup script installs it from source.
+- Durchblick 0.5 or newer, below 0.6 (Python package `xblick`). Both ways of the install below bring it.
 - [uv](https://docs.astral.sh/uv/) and git.
 - A Hugging Face account with access to the gated model [facebook/sam3.1](https://huggingface.co/facebook/sam3.1).
 - SAM 3's code and the SAM 3.1 checkpoint are under Meta's SAM License. Whoever uses the node uses them and is bound
@@ -38,8 +38,36 @@ Details: [docs/topics.md](docs/topics.md).
 
 ## Install
 
-1. Ask for access on <https://huggingface.co/facebook/sam3.1>.
-2. Clone this repository and run the setup script. It creates `.venv` exactly as `uv.lock` fixes it. Then it runs
+Ask for access on <https://huggingface.co/facebook/sam3.1> first. Then install the node with uv, or clone this
+repository for development.
+
+### With uv
+
+```bash
+uv tool install git+https://github.com/xblick/xblick-sam3@v0.2.6
+```
+
+uv puts `xblick-sam3` and `xblick-sam3-prompts` on PATH, in an environment of their own, with PyTorch for CUDA 13
+and Python 3.12. It resolves the dependencies afresh within the bounds of `pyproject.toml`: `uv.lock` applies only to
+a clone. SAM 3's code comes from the newest commit of its GitHub repository.
+
+Log in to Hugging Face once, or set `HF_TOKEN` to your token. Then download the checkpoint (3.5 GB) into
+`~/.cache/xblick/sam3/`. The command prints the terms of the SAM License and checks the SHA-256.
+
+```bash
+uvx --from huggingface-hub hf auth login
+xblick-sam3 --download-only
+```
+
+`uv tool upgrade xblick-sam3` updates the dependencies within the bounds of the installed version. A newer version
+is the same install command with its tag. `uv tool uninstall xblick-sam3` removes the node. The checkpoint stays in
+the cache directory.
+
+### From a clone
+
+For development, and for the versions that `uv.lock` fixes:
+
+1. Clone this repository and run the setup script. It creates `.venv` exactly as `uv.lock` fixes it. Then it runs
    `xblick-sam3 --download-only`, which prints the terms of the SAM License and downloads the checkpoint.
 
    ```bash
@@ -47,20 +75,22 @@ Details: [docs/topics.md](docs/topics.md).
    ```
 
    The first call stops at the download, because you are not logged in yet. The error names the next step.
-3. Log in once, or set `HF_TOKEN` to your token.
+2. Log in once, or set `HF_TOKEN` to your token.
 
    ```bash
    .venv/bin/hf auth login
    ```
 
-4. Download the checkpoint (3.5 GB) into `~/.cache/xblick/sam3/`. The command checks its SHA-256.
+3. Download the checkpoint (3.5 GB) into `~/.cache/xblick/sam3/`. The command checks its SHA-256.
 
    ```bash
    .venv/bin/xblick-sam3 --download-only
    ```
 
 The venv contains PyTorch with CUDA 13 and SAM 3's code from GitHub at the commit that `uv.lock` fixes. If `HF_TOKEN`
-is set before step 2, the first call already downloads the checkpoint.
+is set before step 1, the first call already downloads the checkpoint.
+
+### Downloads at the start
 
 The node itself also downloads a missing checkpoint at its start, before it loads the model. It prints the terms,
 the file and its size first. `--download-only` serves preparation scripts: it needs no camera, no Zenoh router and
@@ -71,8 +101,8 @@ and it names the file.
 ### Where the weights are
 
 The node keeps its weights in its cache directory, `~/.cache/xblick/sam3/`. `XBLICK_HOME=/dir` moves it to `/dir/cache/sam3/`,
-and `XDG_CACHE_HOME` moves it as well. `--weights-dir DIR` names another directory. The place is the same for a
-checkout and for a pip install. [Where files are](https://github.com/xblick/xblick/blob/main/docs/reference/files.md) lists the places, and it shows how to copy the cache to a
+and `XDG_CACHE_HOME` moves it as well. `--weights-dir DIR` names another directory. The place is the same for an
+install with uv and for a clone. [Where files are](https://github.com/xblick/xblick/blob/main/docs/reference/files.md) lists the places, and it shows how to copy the cache to a
 PC without internet.
 
 Up to version 0.2.3, the weights were in the checkout's `checkpoints/`. The node does not read them there. At its start it
@@ -86,10 +116,10 @@ mkdir -p ~/.cache/xblick && mv checkpoints ~/.cache/xblick/sam3
 
 Start the node on a camera. `test/camera` is an example name. The node connects to the Zenoh router of the
 PC, which [Sessions](https://github.com/xblick/xblick/blob/main/docs/concepts/sessions.md)
-explains.
+explains. In a clone the commands are in `.venv/bin/`.
 
 ```bash
-.venv/bin/xblick-sam3 --camera test/camera --words "cup,bottle,tomato soup can" --compile default
+xblick-sam3 --camera test/camera --words "cup,bottle,tomato soup can" --compile default
 ```
 
 `--compile default` compiles the networks for about 45 s before the first frame. After that a frame takes about a
@@ -105,8 +135,8 @@ xblick rerun --spawn --detections test/camera/sam3/detections_2d \
 Read the prompts and set new ones while the node works:
 
 ```bash
-.venv/bin/xblick-sam3-prompts --camera test/camera
-.venv/bin/xblick-sam3-prompts --camera test/camera --words bowl "soup can"
+xblick-sam3-prompts --camera test/camera
+xblick-sam3-prompts --camera test/camera --words bowl "soup can"
 ```
 
 The options that most users change:
