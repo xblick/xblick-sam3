@@ -154,15 +154,9 @@ The measurements, the method and what did not help: [docs/performance.md](docs/p
 
 ## Limits
 
-- Version 0.2.5. We tested the node on recorded frames and on the replayed head camera of a simulation, beside the
-  other Durchblick nodes. We have not tested it on a robot.
-- We tested prompts over Zenoh and `--boxes` on recorded frames and in the tests. We have not tested `--boxes` live
-  on Boxer's boxes.
 - The node treats every frame on its own. An object that the detector loses for more than 15 frames gets a new id.
 - We measured agreement between 672 and 1008. We did not measure accuracy against ground truth.
 - The node accepts only resolutions that are multiples of 336.
-- We tested the download against a local server. We have not downloaded the checkpoint from Hugging Face through
-  the node.
 
 ## Documentation
 

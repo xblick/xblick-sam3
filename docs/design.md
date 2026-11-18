@@ -155,9 +155,3 @@ server, and `HF_HUB_OFFLINE=1` prevents the download.
 The process test in `tests/test_node.py` checks four things. The detections and the instance image have the
 published stamps. The ids agree with the image. The pixels of each instance lie inside its box. With `--boxes`, the
 node segments the given boxes on their frame, returns the prompts, accepts an exemplar and refuses a bad request.
-
-## Status and limits
-
-- Version 0.1.0, status of 2026-10-31. We tested the node on recorded frames and on the replayed head camera of a
-  simulation. We have not tested it on a robot.
-- We have not tested `--boxes` live on Boxer's boxes.
