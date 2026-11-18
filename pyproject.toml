@@ -1,6 +1,6 @@
 [project]
 name = "xblick-sam3"
-version = "0.2.5"
+version = "0.2.6"
 description = "Meta's SAM 3.1 (open-vocabulary instance segmentation) as a Durchblick vision node"
 readme = "README.md"
 license = "Apache-2.0 AND LicenseRef-SAM-License"
@@ -8,7 +8,7 @@ license-files = ["LICENSE", "NOTICE", "LICENSES/SAM-License.txt"]
 authors = [{ name = "David Schneider" }]
 requires-python = ">=3.12,<3.13"
 dependencies = [
-    "xblick>=0.5.5,<0.6",  # the Durchblick core: node, history, tensors, mps, parameters, vision_msgs
+    "xblick>=0.5.14,<0.6",  # the Durchblick core: node, history, tensors, mps, parameters, vision_msgs
     # SAM 3 / 3.1's model code (facebookresearch/sam3, SAM License); uv.lock fixes the commit
     "sam3",
     "torch>=2.7",

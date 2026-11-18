@@ -16,7 +16,7 @@ tools/setup.sh                                  # .venv as uv.lock fixes it, the
 .venv/bin/python -m pytest -q tests/test_node.py
 .venv/bin/ruff check src tests                  # lint, 120 columns (pyproject)
 .venv/bin/python tools/bench.py IMAGES_DIR --words cup bottle --compile default --resolution 672   # speed tables
-uv lock                                         # after a new core rev in pyproject (pin xblick>=0.5.5,<0.6)
+uv lock                                         # after a new core rev in pyproject (pin xblick>=0.5.14,<0.6)
 .venv/bin/xblick-sam3 --camera test/camera --words "cup,bottle" --compile default   # needs zenohd on 7447
 ```
 
