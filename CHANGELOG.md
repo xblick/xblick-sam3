@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.2.7 (2026-11-18)
+
+Ids that stay with their objects when the camera moves.
+
+### Changed
+
+- The tracker moves all known masks with the image before it matches: one shift and scale per frame, estimated from
+  the masks (`--motion masks`, the default; `none` switches it off). It needs two objects that agree.
+- An instance with too little overlap keeps an object's id when its centre is near where the object is expected and
+  its size is similar: `--match-distance` (0.5 object sizes) and `--match-size` (2). Both are live parameters.
+- An instance that covers two objects keeps the larger one's id; the smaller gets its id back when the masks part.
+  A split object keeps its id on the larger part.
+- `--max-missing` is 30 frames (was 15). An unseen object takes an instance where it is expected.
+- The status reports the new ids, the known objects per frame and the frames with a motion estimate.
+
+On TUM RGB-D `fr3/long_office_household` the node issues 168 ids instead of 384 (docs/topics.md). Nothing on the
+wire changed.
+
 ## 0.2.6 (2026-11-18)
 
 The Durchblick core 0.5.14.
