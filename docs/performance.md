@@ -174,7 +174,8 @@ Setup: TUM RGB-D at 672, median of 90 frames, measured in the same way as `tools
 | 32 boxes in addition | 4.9 ms | 6.5 ms |
 | Boxes alone, no prompts, 1 to 8 boxes | 14.1 ms per frame | |
 
-The matching of the ids takes 0.4 ms per frame.
+The matching of the ids takes about 1.3 ms per frame, with about six instances per frame on an RTX PRO 6000
+(measured on 2026-11-19 on TUM RGB-D; 0.6 ms with the overlap alone, 0.2.6).
 
 ## With other nodes on one GPU
 

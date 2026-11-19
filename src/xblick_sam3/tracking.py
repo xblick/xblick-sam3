@@ -24,7 +24,7 @@ The segmenter sees every frame on its own; its instances come in order of score,
    ends; until then it can take an instance where it is expected (its moved mask, or its moved centre and size).
 
 In-plane rotation of the image is not estimated (a head pans and tilts; a roll of a few degrees moves masks little).
-On the GPU, about half a millisecond a frame for ten objects (docs/topics.md).
+On the GPU, about 1.3 ms a frame for six instances (docs/topics.md).
 """
 
 from __future__ import annotations

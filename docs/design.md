@@ -32,7 +32,7 @@ these frames by its stamp.
 ## Ids from mask overlap
 
 The detector gives no identity to an instance. The node therefore matches each frame's masks to the masks of the
-frame before, in `tracking.py`. [docs/topics.md](topics.md#ids) describes the rules and how stable the ids are.
+objects seen before, after the motion of the whole image, in `tracking.py`. [docs/topics.md](topics.md#ids) describes the rules and how stable the ids are.
 
 ## Why the node does not use SAM 3.1's tracker
 
@@ -149,7 +149,7 @@ server, and `HF_HUB_OFFLINE=1` prevents the download.
 | --- | --- |
 | `tests/test_segmenter.py` | The masks against SAM 3's own forward pass. The instance image against the masks. A frame without the words. 672 against 1008. The box head against the detector's masks. An exemplar box that finds its kind beside words that keep their instances. Refused prompts. |
 | `tests/test_weights.py` | Without a GPU, against a local HTTP server: the checkpoint's entry, no network use when it exists, a download through the Hugging Face path with its redirect, a wrong checksum, the answer without access, Ctrl-C and SIGTERM, two processes at once, the progress in a log file, `--download-only` and `--no-download`. |
-| `tests/test_tracking.py` | The id rules: moving objects, new objects, too little overlap, `--max-missing`, the wrap of the ids, the instance image. |
+| `tests/test_tracking.py` | The id rules: moving objects, new objects, too little overlap, `--max-missing`, the wrap of the ids, the instance image. Synthetic sequences: a pan, a pan with one object that moves on its own, a zoom, a gap during a pan, one object alone, an object of another size, an object that comes back, a merge and a split. |
 | `tests/test_node.py` | The messages, prompt requests and colour encodings. The node as its own process on a published `bgr8` stream over real Zenoh sessions. The node with `--boxes` and its queryable. |
 
 The process test in `tests/test_node.py` checks four things. The detections and the instance image have the

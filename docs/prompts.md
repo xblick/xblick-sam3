@@ -15,7 +15,10 @@ works, the `--boxes` mode, and the Python class behind the node.
 | `--node` | `sam3` | The part of the topic names after the camera. |
 | `--threshold` | 0.5 | The lowest score of an instance. Live: it changes while the node runs. |
 | `--match-iou` | 0.3 | The lowest mask overlap with which an instance keeps the id of an object. Live: it changes while the node runs. |
-| `--max-missing` | 15 | The number of frames for which an unseen object keeps its id. Live: it changes while the node runs. |
+| `--max-missing` | 30 | The number of frames for which an unseen object keeps its id. Live: it changes while the node runs. |
+| `--match-distance` | 0.5 | An instance with too little overlap keeps the id of an object whose expected centre is at most this many object sizes away. 0: overlap only. Live: it changes while the node runs. |
+| `--match-size` | 2 | The largest factor between the areas of an instance and an object that match by position. Live: it changes while the node runs. |
+| `--motion` | `masks` | The motion of the image before the matching: `masks` estimates it from the masks, `none` takes the image as still. |
 | `--compile MODE` | off | Compile the networks with `torch.compile` in this mode before the first frame. |
 | `--resolution` | 672 | The size to which the node scales a frame. It must be a multiple of 336. |
 | `--checkpoint` | `~/.cache/xblick/sam3/sam3.1_multiplex.pt` | The SAM 3.1 checkpoint. |

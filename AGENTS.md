@@ -89,7 +89,7 @@ uv lock                                         # after a new core rev in pyproj
 | Path | Content |
 | --- | --- |
 | `src/xblick_sam3/segmenter.py` | `Segmenter`, `Prompt`, `BoxHead`: batched words, `resize`, compile and warm-up |
-| `src/xblick_sam3/tracking.py` | mask-IoU id tracker (`--match-iou`, `--max-missing`), instance image |
+| `src/xblick_sam3/tracking.py` | id tracker: image motion from the masks (`--motion`), overlap, position and size (`--match-iou`, `--match-distance`, `--match-size`), merge and split, `--max-missing`; instance image |
 | `src/xblick_sam3/node.py` | the node `xblick-sam3`: streams, boxes, prompts queryable, diagnostics |
 | `src/xblick_sam3/weights.py` | `CHECKPOINT`, `TERMS`, `needed`, `STORE` (the core's `xblick.weights.Store`: the download, `--download-only`/`--no-download`) |
 | `src/xblick_sam3/prompts.py` | client `xblick-sam3-prompts`, request parsing |
@@ -106,7 +106,8 @@ uv lock                                         # after a new core rev in pyproj
 | Outputs | `<camera>/sam3/detections_2d`, `<camera>/sam3/instances` (`mono16`), status `sam3` on `<camera>/diagnostics` |
 | Queryable | `<camera>/sam3/prompts` (JSON) |
 | `--node` | `sam3` |
-| `--threshold` / `--match-iou` / `--max-missing` | 0.5 / 0.3 / 15 |
+| `--threshold` / `--match-iou` / `--max-missing` | 0.5 / 0.3 / 30 |
+| `--match-distance` / `--match-size` / `--motion` | 0.5 / 2 / `masks` |
 | `--resolution` / `--history` / `--max-hz` | 672 / 30 / 30 |
 | `--local` / `--device` / `--compile` | `auto` / `cuda` / off |
 | Box message wait for its frame | 0.5 s (`FRAME_WAIT_S`) |
