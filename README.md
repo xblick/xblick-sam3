@@ -44,7 +44,7 @@ repository for development.
 ### With uv
 
 ```bash
-uv tool install git+https://github.com/xblick/xblick-sam3@v0.2.6
+uv tool install git+https://github.com/xblick/xblick-sam3@v0.2.7
 ```
 
 uv puts `xblick-sam3` and `xblick-sam3-prompts` on PATH, in an environment of their own, with PyTorch for CUDA 13
@@ -158,8 +158,8 @@ The options that most users change:
 All options, the prompt format and the Python class: [docs/prompts.md](docs/prompts.md).
 
 Every option is also a parameter of the node `<camera>/<node>`, for example `test/camera/sam3`. Durchblick's
-terminal interface (`xblick`, tab Parameters) and `xblick param` show them. Four of them change while the node
-runs: `threshold`, `match_iou`, `max_missing` and `words`. A new list of words replaces the prompts at the next frame,
+terminal interface (`xblick`, tab Parameters) and `xblick param` show them. Six of them change while the node
+runs: `threshold`, `match_iou`, `max_missing`, `match_distance`, `match_size` and `words`. A new list of words replaces the prompts at the next frame,
 and prompts set over `<camera>/<node>/prompts` show in `words`. The other options apply at the next start, and
 `--param NAME:=VALUE` or `--params-file FILE` set them there
 ([Parameters](https://github.com/xblick/xblick/blob/main/docs/reference/parameters.md)).
@@ -184,7 +184,11 @@ The measurements, the method and what did not help: [docs/performance.md](docs/p
 
 ## Limits
 
-- The node treats every frame on its own. An object that the detector loses for more than 15 frames gets a new id.
+- The detector treats every frame on its own; the node's tracker gives the ids. It follows the motion of the whole
+  image (shift and scale, estimated from the masks; it needs two objects) and matches by overlap, position and size,
+  in about 1.3 ms per frame. An object that the detector loses for more than 30 frames (`--max-missing`) gets a new
+  id, and so does a part that the detector reports as an object of its own. [docs/topics.md](docs/topics.md#ids) has
+  the rules.
 - We measured agreement between 672 and 1008. We did not measure accuracy against ground truth.
 - The node accepts only resolutions that are multiples of 336.
 
