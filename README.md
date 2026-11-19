@@ -28,49 +28,80 @@ Details: [docs/topics.md](docs/topics.md).
 
 ## Requirements
 
-- An NVIDIA GPU with CUDA. We measured on an RTX PRO 6000 Blackwell. Alone on that GPU the node held 4.7 GiB of
-  VRAM (four words, `--compile default`, 1280 x 720 at 30 frames per second, 2026-11-02).
+- Linux on x86-64 and an NVIDIA GPU with driver 580 or newer (PyTorch for CUDA 13). Alone on an RTX PRO 6000
+  Blackwell the node held 4.7 GiB of VRAM (four words, `--compile default`, 1280 x 720 at 30 frames per second).
 - Durchblick 0.5 or newer, below 0.6 (Python package `xblick`). Both ways of the install below bring it.
-- [uv](https://docs.astral.sh/uv/) and git.
+- git and [uv](https://docs.astral.sh/uv/). Step 1 of the installation installs them.
 - A Hugging Face account with access to the gated model [facebook/sam3.1](https://huggingface.co/facebook/sam3.1).
 - SAM 3's code and the SAM 3.1 checkpoint are under Meta's SAM License. Whoever uses the node uses them and is bound
   by it, see [Licence and credits](#licence-and-credits).
 
 ## Install
 
-Ask for access on <https://huggingface.co/facebook/sam3.1> first. Then install the node with uv, or clone this
-repository for development.
+1. Install the prerequisites. `nvidia-smi` prints the GPU and the driver version, which must be 580 or newer. On
+   Ubuntu, `sudo apt install nvidia-driver-580` and a restart install that driver. After the installation of uv, open
+   a new terminal, so that `uv` is on `PATH`. Ask for access to the gated model on
+   <https://huggingface.co/facebook/sam3.1> with your Hugging Face account: the download in step 2 needs it.
 
-### With uv
+   ```bash
+   nvidia-smi
+   sudo apt install git
+   wget -qO- https://astral.sh/uv/install.sh | sh
+   ```
 
-```bash
-uv tool install git+https://github.com/xblick/xblick-sam3@v0.2.7
-```
+2. Install the node, log in to Hugging Face once and download the checkpoint:
 
-uv puts `xblick-sam3` and `xblick-sam3-prompts` on PATH, in an environment of their own, with PyTorch for CUDA 13
-and Python 3.12. It resolves the dependencies afresh within the bounds of `pyproject.toml`: `uv.lock` applies only to
-a clone. SAM 3's code comes from the newest commit of its GitHub repository.
+   ```bash
+   uv tool install git+https://github.com/xblick/xblick-sam3@v0.2.8
+   uvx --from huggingface-hub hf auth login
+   xblick-sam3 --download-only
+   ```
 
-Log in to Hugging Face once, or set `HF_TOKEN` to your token. Then download the checkpoint (3.5 GB) into
-`~/.cache/xblick/sam3/`. The command prints the terms of the SAM License and checks the SHA-256.
+   uv puts `xblick-sam3` and `xblick-sam3-prompts` on `PATH`, in an environment of their own, with PyTorch for CUDA
+   13 (about 3 GB to download, 6 GB on disk) and Python 3.12. It resolves the dependencies afresh within the bounds
+   of `pyproject.toml`: `uv.lock` applies only to a clone. SAM 3's code comes from the newest commit of its GitHub
+   repository. `hf auth login` asks for a token of your Hugging Face account; `HF_TOKEN` set to the token works
+   instead. `xblick-sam3 --download-only` prints the terms of the SAM License, downloads the checkpoint (3.5 GB) into
+   `~/.cache/xblick/sam3/` and checks its SHA-256. Without access or login it stops and says so; its message names
+   `.venv/bin/hf auth login`, which is the command of a clone: after `uv tool install` the `uvx` line above logs in.
 
-```bash
-uvx --from huggingface-hub hf auth login
-xblick-sam3 --download-only
-```
+   `uv tool upgrade xblick-sam3` updates the dependencies within the bounds of the installed version. A newer
+   version is the same install command with its tag. `uv tool uninstall xblick-sam3` removes the node. The
+   checkpoint stays in the cache directory.
 
-`uv tool upgrade xblick-sam3` updates the dependencies within the bounds of the installed version. A newer version
-is the same install command with its tag. `uv tool uninstall xblick-sam3` removes the node. The checkpoint stays in
-the cache directory.
+3. Install the core's command `xblick` with the viewer, video files and webcams. uv puts it on `PATH`. A second
+   `uv tool install` of xblick with other extras replaces the first and removes what only the first had, so every
+   xblick node names this one line:
+
+   ```bash
+   uv tool install "xblick[rerun,video,cam]>=0.5,<0.6"
+   ```
+
+4. Start the node on photos, without a camera. Take a few JPEG photos of a room or a table, for example in
+   `~/Pictures`. Run each command in its own terminal. If the PC already runs a Zenoh router (`xblick router` or
+   `zenohd`), leave out the first one.
+
+   ```bash
+   xblick router                                         # the Zenoh router of this PC
+   xblick play "$HOME/Pictures/*.jpg" --camera demo/photos --fps 1 --loop
+   xblick-sam3 --camera demo/photos --words "cup,chair,bottle"
+   xblick rerun                                          # the viewer
+   ```
+
+   `xblick play` shows the photos one per second as the camera `demo/photos`. Name in `--words` what is in your
+   photos. The viewer shows each photo with a coloured mask and a box on every object that matches a word.
 
 ### From a clone
 
 For development, and for the versions that `uv.lock` fixes:
 
 1. Clone this repository and run the setup script. It creates `.venv` exactly as `uv.lock` fixes it. Then it runs
-   `xblick-sam3 --download-only`, which prints the terms of the SAM License and downloads the checkpoint.
+   `xblick-sam3 --download-only`, which prints the terms of the SAM License and downloads the checkpoint. When git
+   or uv is missing, the script stops and prints the command that installs it. `tools/setup.sh --help` describes it.
 
    ```bash
+   git clone https://github.com/xblick/xblick-sam3.git
+   cd xblick-sam3
    tools/setup.sh
    ```
 
